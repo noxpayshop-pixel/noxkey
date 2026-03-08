@@ -114,24 +114,28 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     setSpinning(true);
     setLockedBet(betAmount);
 
+    const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+    setActiveSegments(segments);
+    // Redraw wheel for current bet
+    if (canvasRef.current) drawWheel(canvasRef.current, segments);
+
     await onDeduct();
 
-    // Determine outcome
     let targetIdx: number;
     if (discordUsername) {
       const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
       if (!shouldWin) {
-        const zeroIndices = SEGMENTS.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
+        const zeroIndices = segments.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
         targetIdx = zeroIndices[Math.floor(Math.random() * zeroIndices.length)];
       } else {
-        const winIndices = SEGMENTS.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
+        const winIndices = segments.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
         targetIdx = winIndices[Math.floor(Math.random() * winIndices.length)];
       }
     } else {
-      targetIdx = Math.floor(Math.random() * SEGMENTS.length);
+      targetIdx = Math.floor(Math.random() * segments.length);
     }
 
-    const segAngle = 360 / SEGMENTS.length;
+    const segAngle = 360 / segments.length;
     const targetAngle = 360 - (targetIdx * segAngle + segAngle / 2);
     const spins = 5 + Math.floor(Math.random() * 3);
     const finalRotation = rotation + spins * 360 + targetAngle - (rotation % 360);
@@ -140,7 +144,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
 
     await new Promise(r => setTimeout(r, 4000));
 
-    const seg = SEGMENTS[targetIdx];
+    const seg = segments[targetIdx];
     const payout = seg.amount;
     const won = payout > 0;
     setResult({ won, payout, amount: seg.amount });
