@@ -109,19 +109,17 @@ const Casino = () => {
   const GAMES = ALL_GAMES.filter(g => enabledGames.includes(g.id));
 
   const renderGame = () => {
-    const commonProps = { points, betAmount, setBetAmount, playing, sessionHistory };
-    const deductProps = { ...commonProps, onDeduct: handleDeduct, onComplete: handleComplete };
-    const playProps = { ...commonProps, onPlay: handlePlay };
+    const props = { points, betAmount, setBetAmount, playing, sessionHistory, onDeduct: handleDeduct, onComplete: handleComplete };
 
     switch (selectedGame) {
-      case 'coinflip': return <CoinFlipGame {...playProps} />;
-      case 'mines': return <MinesGame {...deductProps} />;
-      case 'crash': return <CrashGame {...deductProps} />;
-      case 'chicken': return <ChickenRoadGame {...deductProps} />;
-      case 'towers': return <TowersGame {...playProps} />;
-      case 'blackjack': return <BlackjackGame {...playProps} />;
-      case 'limbo': return <LimboGame {...playProps} />;
-      case 'splat': return <SplatGame {...playProps} />;
+      case 'coinflip': return <CoinFlipGame {...props} />;
+      case 'mines': return <MinesGame {...props} />;
+      case 'crash': return <CrashGame {...props} />;
+      case 'chicken': return <ChickenRoadGame {...props} />;
+      case 'towers': return <TowersGame {...props} />;
+      case 'blackjack': return <BlackjackGame {...props} />;
+      case 'limbo': return <LimboGame {...props} />;
+      case 'splat': return <SplatGame {...props} />;
       default: return null;
     }
   };
