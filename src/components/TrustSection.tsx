@@ -51,7 +51,7 @@ const TrustSection = () => {
         </div>
 
         <motion.div
-          className="nox-surface rounded-2xl border border-border p-6 inline-block"
+          className="nox-surface rounded-2xl border border-border p-6 inline-block nox-hover-glow"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
