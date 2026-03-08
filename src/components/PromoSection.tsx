@@ -9,7 +9,7 @@ const PromoSection = () => {
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
         {/* Automated Replacements */}
         <motion.div
-          className="group relative overflow-hidden rounded-2xl border border-border nox-surface p-8 hover:border-primary/30 transition-all"
+          className="group relative overflow-hidden rounded-2xl border border-border nox-surface p-8 nox-hover-glow transition-all"
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
