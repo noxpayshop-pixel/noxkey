@@ -40,7 +40,7 @@ const ALL_GAMES: GameDef[] = [
   { id: 'towers', name: 'Towers', description: 'Climb the tower for multipliers.', icon: <Zap className="w-5 h-5" />, color: 'text-blue-400', gradient: 'from-blue-500/20 to-indigo-500/10' },
   { id: 'blackjack', name: 'Blackjack', description: 'Classic 21. Hit or Stand?', icon: <Dices className="w-5 h-5" />, color: 'text-purple-400', gradient: 'from-purple-500/20 to-violet-500/10' },
   { id: 'limbo', name: 'Limbo', description: 'Predict the multiplier.', icon: <Flame className="w-5 h-5" />, color: 'text-orange-400', gradient: 'from-orange-500/20 to-amber-500/10' },
-  { id: 'wheel', name: 'Lucky Wheel', description: 'Spin to win up to 5x!', icon: <span className="text-lg">🎡</span>, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
+  { id: 'wheel', name: 'Lucky Wheel', description: 'Spin to win up to +25 points!', icon: <span className="text-lg">🎡</span>, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
 ];
 
 const Casino = () => {
