@@ -224,12 +224,19 @@ const MyPoints = () => {
             <div className="flex items-center gap-1 mb-6 bg-secondary/50 rounded-xl p-1">
               {[
                 { key: 'shop', label: 'Free Shop', icon: ShoppingBag },
+                { key: 'casino', label: '🎰 Casino', icon: Coins },
                 { key: 'earn', label: 'Earn Points', icon: Star },
                 { key: 'history', label: 'History', icon: Clock },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
-                  onClick={() => setActiveTab(key as any)}
+                  onClick={() => {
+                    if (key === 'casino') {
+                      window.location.href = '/casino';
+                      return;
+                    }
+                    setActiveTab(key as any);
+                  }}
                   className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
                     activeTab === key ? 'nox-surface text-foreground nox-glow-sm' : 'text-muted-foreground hover:text-foreground'
                   }`}
