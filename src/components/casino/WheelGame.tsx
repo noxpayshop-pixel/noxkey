@@ -125,9 +125,9 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     await new Promise(r => setTimeout(r, 4000));
 
     const seg = SEGMENTS[targetIdx];
-    const payout = Math.floor(betAmount * seg.multiplier);
+    const payout = seg.amount;
     const won = payout > 0;
-    setResult({ won, payout, multiplier: seg.multiplier });
+    setResult({ won, payout, amount: seg.amount });
     setSpinning(false);
     await onComplete(won, payout);
   };
