@@ -685,6 +685,7 @@ interface UserAccount {
   discord_username: string;
   claimCount: number;
   requestCount: number;
+  points: number;
   claims: Array<Redemption & { product_name: string }>;
 }
 
