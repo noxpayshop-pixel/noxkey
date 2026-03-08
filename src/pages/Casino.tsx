@@ -44,7 +44,7 @@ const ALL_GAMES: GameDef[] = [
 ];
 
 // Games that use deduct-first flow (player-driven outcomes)
-const DEDUCT_FIRST_GAMES = ['mines', 'chicken'];
+const DEDUCT_FIRST_GAMES = ['mines', 'chicken', 'crash'];
 
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
@@ -135,7 +135,7 @@ const Casino = () => {
     switch (selectedGame) {
       case 'coinflip': return <CoinFlipGame {...playProps} />;
       case 'mines': return <MinesGame {...deductProps} />;
-      case 'crash': return <CrashGame {...playProps} />;
+      case 'crash': return <CrashGame {...deductProps} />;
       case 'chicken': return <ChickenRoadGame {...deductProps} />;
       case 'towers': return <TowersGame {...playProps} />;
       case 'blackjack': return <BlackjackGame {...playProps} />;
