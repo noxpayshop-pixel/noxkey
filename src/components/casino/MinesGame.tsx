@@ -20,6 +20,7 @@ const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
 export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
   const { discordUsername } = useDiscordAuth();
+  const MINE_OPTIONS = [5, 7, 10, 13, 15];
   const [mineCount, setMineCount] = useState(5);
   const [gameActive, setGameActive] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
