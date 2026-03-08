@@ -89,6 +89,69 @@ export async function calculateHouseEdge({ betAmount, discordUsername }: HouseEd
   return { baseWinChance, adjustedWinChance, recentProfit, winStreak, totalWon, totalLost };
 }
 
+// Deduct bet upfront (for games like Mines where outcome is player-driven)
+export async function deductBet(
+  discordUsername: string,
+  betAmount: number,
+  currentPoints: number,
+): Promise<{ newPoints: number }> {
+  if (betAmount > currentPoints || betAmount < 1) throw new Error('Invalid bet amount');
+  const newPoints = currentPoints - betAmount;
+  await supabase
+    .from('user_points')
+    .update({ points: newPoints, updated_at: new Date().toISOString() })
+    .eq('discord_username', discordUsername);
+  return { newPoints };
+}
+
+// Complete a bet that was already deducted (record result + pay out if won)
+export async function completeBet(
+  discordUsername: string,
+  game: string,
+  betAmount: number,
+  won: boolean,
+  payout: number,
+  currentPoints: number,
+): Promise<{ newPoints: number; winStreak: number }> {
+  const newPoints = won ? currentPoints + payout : currentPoints;
+
+  if (won) {
+    await supabase
+      .from('user_points')
+      .update({ points: newPoints, updated_at: new Date().toISOString() })
+      .eq('discord_username', discordUsername);
+  }
+
+  await supabase.from('casino_bets').insert({
+    discord_username: discordUsername,
+    game,
+    bet_amount: betAmount,
+    won,
+    payout: won ? payout : 0,
+  });
+
+  await supabase.from('point_transactions').insert({
+    discord_username: discordUsername,
+    amount: won ? payout - betAmount : -betAmount,
+    type: 'casino',
+    description: `${won ? 'Won' : 'Lost'} ${game} (bet ${betAmount})`,
+  });
+
+  const { data: recentBets } = await supabase
+    .from('casino_bets')
+    .select('won')
+    .eq('discord_username', discordUsername)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  let winStreak = 0;
+  for (const b of (recentBets ?? [])) {
+    if (b.won) winStreak++;
+    else break;
+  }
+
+  return { newPoints, winStreak };
+}
+
 export async function placeBet(
   discordUsername: string,
   game: string,
@@ -103,35 +166,28 @@ export async function placeBet(
   const roll = Math.random();
   const won = roll < edge.adjustedWinChance;
 
-  // Payout multiplier varies by game
-  let multiplier = 2; // default: double
+  let multiplier = 2;
   if (game === 'coinflip') multiplier = 2;
-  else if (game === 'crash') multiplier = 1.5 + Math.random() * 2; // 1.5x - 3.5x
+  else if (game === 'crash') multiplier = 1.5 + Math.random() * 2;
   else if (game === 'mines') multiplier = 1.8;
   else if (game === 'towers') multiplier = 2.5;
-  else if (game === 'limbo') multiplier = 1 + Math.random() * 4; // 1x-5x
-  else if (game === 'splat') multiplier = 2 + Math.random() * 3; // 2x-5x
+  else if (game === 'limbo') multiplier = 1 + Math.random() * 4;
+  else if (game === 'splat') multiplier = 2 + Math.random() * 3;
+  else if (game === 'chicken') multiplier = 2;
 
   const payout = won ? Math.floor(betAmount * multiplier) : 0;
   const newPoints = currentPoints - betAmount + payout;
   const newStreak = won ? edge.winStreak + 1 : 0;
 
-  // Record bet
   await supabase.from('casino_bets').insert({
-    discord_username: discordUsername,
-    game,
-    bet_amount: betAmount,
-    won,
-    payout,
+    discord_username: discordUsername, game, bet_amount: betAmount, won, payout,
   });
 
-  // Update points
   await supabase
     .from('user_points')
     .update({ points: newPoints, updated_at: new Date().toISOString() })
     .eq('discord_username', discordUsername);
 
-  // Record transaction
   await supabase.from('point_transactions').insert({
     discord_username: discordUsername,
     amount: won ? payout - betAmount : -betAmount,
