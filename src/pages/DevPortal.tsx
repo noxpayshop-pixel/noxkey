@@ -13,7 +13,7 @@ import {
 import {
   Package, Plus, Trash2, Copy, ChevronLeft, Settings, Users, KeyRound, LogOut,
   BarChart3, Send, Loader2, RefreshCw, CheckCircle2, XCircle, Eye, ArrowRight,
-  User, ImageIcon,
+  User, ImageIcon, Gift, Star, Coins,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
