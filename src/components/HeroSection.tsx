@@ -47,13 +47,15 @@ const HeroSection = () => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.2, ease: 'backOut' }}
         >
-          <div className="absolute inset-0 -m-6 rounded-full border border-primary/10 animate-pulse-glow" />
-          <div className="absolute inset-0 -m-12 rounded-full border border-primary/5" />
-          <img
-            src={logo}
-            alt="The Nox Logo"
-            className="w-32 h-32 md:w-40 md:h-40 animate-float relative z-10 drop-shadow-2xl rounded-full object-cover"
-          />
+          <div className="relative animate-float">
+            <div className="absolute inset-0 -m-6 rounded-full border border-primary/10 animate-pulse-glow" />
+            <div className="absolute inset-0 -m-12 rounded-full border border-primary/5" />
+            <img
+              src={logo}
+              alt="The Nox Logo"
+              className="w-32 h-32 md:w-40 md:h-40 relative z-10 drop-shadow-2xl rounded-full object-cover"
+            />
+          </div>
         </motion.div>
 
         {/* Badge */}
