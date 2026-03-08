@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
@@ -46,6 +46,8 @@ const ALL_GAMES: GameDef[] = [
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
   const [points, setPoints] = useState(0);
+  const pointsRef = useRef(0);
+  const setPointsTracked = (n: number) => { pointsRef.current = n; setPoints(n); };
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [betAmount, setBetAmount] = useState(1);
@@ -63,7 +65,7 @@ const Casino = () => {
       getRecentActivity(discordUsername, 15),
       getUserStats(discordUsername),
     ]);
-    setPoints(pointsRes.data?.points ?? 0);
+    setPointsTracked(pointsRes.data?.points ?? 0);
     setRecentActivity(activity);
     setStats(userStats);
     const settings = getSettings();
@@ -87,15 +89,16 @@ const Casino = () => {
   useEffect(() => { setSessionHistory([]); }, [selectedGame]);
 
   const handleDeduct = async () => {
-    if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
-    const res = await deductBet(discordUsername, betAmount, points);
-    setPoints(res.newPoints);
+    if (!discordUsername || betAmount < 1 || betAmount > pointsRef.current) throw new Error('Invalid');
+    const res = await deductBet(discordUsername, betAmount, pointsRef.current);
+    setPointsTracked(res.newPoints);
   };
 
   const handleComplete = async (won: boolean, payout: number) => {
     if (!selectedGame || !discordUsername) return;
-    const res = await completeBet(discordUsername, selectedGame, betAmount, won, payout, points);
-    setPoints(res.newPoints);
+    const currentPts = pointsRef.current;
+    const res = await completeBet(discordUsername, selectedGame, betAmount, won, payout, currentPts);
+    setPointsTracked(res.newPoints);
     const net = won ? payout - betAmount : -betAmount;
     setSessionHistory(prev => [{ won, amount: net }, ...prev]);
     if (won) toast.success(`🎉 You won ${payout} points!`, { duration: 4000 });
