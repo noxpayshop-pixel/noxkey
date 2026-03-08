@@ -59,8 +59,7 @@ const PromoSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="absolute top-0 left-0 w-60 h-60 rounded-full bg-accent/4 blur-[100px] group-hover:bg-accent/8 transition-all duration-700" />
-            <div className="absolute bottom-0 right-0 w-40 h-40 rounded-full bg-primary/3 blur-[80px] group-hover:bg-primary/6 transition-all duration-700" />
+            <div className="absolute top-0 left-0 w-48 h-48 rounded-full bg-accent/5 blur-[60px]" />
             <div className="relative z-10">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(var(--accent))] to-[hsl(var(--primary))] flex items-center justify-center mb-6 shadow-lg shadow-accent/20">
                 <Gift className="w-8 h-8 text-primary-foreground" />
