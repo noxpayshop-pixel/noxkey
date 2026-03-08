@@ -269,16 +269,30 @@ export async function triggerAutoDelivery(productId: string) {
 
 // ---- Settings (kept in localStorage for simplicity) ----
 
+export interface VouchPlatform {
+  name: string;
+  url: string;
+}
+
 export interface NoxSettings {
   vouchUrl: string;
   discordInvite: string;
+  feedbackImages: string[];
+  vouchPlatforms: VouchPlatform[];
 }
+
+const defaultSettings: NoxSettings = {
+  vouchUrl: '',
+  discordInvite: 'https://discord.gg/thenox',
+  feedbackImages: [],
+  vouchPlatforms: [],
+};
 
 export function getSettings(): NoxSettings {
   try {
     const raw = localStorage.getItem('nox_settings');
-    return raw ? JSON.parse(raw) : { vouchUrl: '', discordInvite: 'https://discord.gg/thenox' };
-  } catch { return { vouchUrl: '', discordInvite: 'https://discord.gg/thenox' }; }
+    return raw ? { ...defaultSettings, ...JSON.parse(raw) } : defaultSettings;
+  } catch { return defaultSettings; }
 }
 
 export function saveSettings(settings: NoxSettings) {
