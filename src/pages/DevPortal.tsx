@@ -200,9 +200,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
               <motion.div key="gifts" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <GiftsView />
               </motion.div>
-            )}
-              </motion.div>
-            )}
+            )
 
             {tab === 'settings' && (
               <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 max-w-md">
