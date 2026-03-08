@@ -324,18 +324,21 @@ export type Database = {
       }
       user_points: {
         Row: {
+          casino_chance_modifier: number
           discord_username: string
           id: string
           points: number
           updated_at: string
         }
         Insert: {
+          casino_chance_modifier?: number
           discord_username: string
           id?: string
           points?: number
           updated_at?: string
         }
         Update: {
+          casino_chance_modifier?: number
           discord_username?: string
           id?: string
           points?: number
