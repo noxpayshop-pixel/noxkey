@@ -1071,4 +1071,152 @@ function GiftsView() {
   );
 }
 
+// ---- Casino Admin View ----
+function CasinoAdminView() {
+  const [liveBets, setLiveBets] = useState<any[]>([]);
+  const [users, setUsers] = useState<Array<{ discord_username: string; points: number; casino_chance_modifier: number }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [modifierInputs, setModifierInputs] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const [betsRes, usersRes] = await Promise.all([
+      supabase.from('casino_bets').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('user_points').select('discord_username, points, casino_chance_modifier').order('points', { ascending: false }),
+    ]);
+    setLiveBets(betsRes.data ?? []);
+    setUsers(usersRes.data ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Realtime live bets
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-casino-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'casino_bets' }, (payload) => {
+        setLiveBets(prev => [payload.new as any, ...prev].slice(0, 50));
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const updateModifier = async (username: string) => {
+    const val = parseFloat(modifierInputs[username] ?? '0');
+    await supabase.from('user_points').update({ casino_chance_modifier: val }).eq('discord_username', username);
+    setUsers(prev => prev.map(u => u.discord_username === username ? { ...u, casino_chance_modifier: val } : u));
+    toast.success(`Chance modifier for @${username} set to ${val > 0 ? '+' : ''}${val}%`);
+    setModifierInputs(prev => ({ ...prev, [username]: '' }));
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const filteredUsers = searchQuery
+    ? users.filter(u => u.discord_username.toLowerCase().includes(searchQuery.toLowerCase()))
+    : users;
+
+  // Calculate totals
+  const totalWagered = liveBets.reduce((s, b) => s + b.bet_amount, 0);
+  const totalPaidOut = liveBets.reduce((s, b) => s + (b.won ? b.payout : 0), 0);
+  const houseProfit = totalWagered - totalPaidOut;
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+        <Coins className="w-5 h-5 text-primary" /> Casino Management
+      </h2>
+
+      {/* House stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="nox-surface rounded-xl border border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Wagered (last 50)</p>
+          <p className="text-xl font-bold text-foreground">{totalWagered}</p>
+        </div>
+        <div className="nox-surface rounded-xl border border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">Paid Out</p>
+          <p className="text-xl font-bold text-foreground">{totalPaidOut}</p>
+        </div>
+        <div className="nox-surface rounded-xl border border-border p-4 text-center">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">House Profit</p>
+          <p className={`text-xl font-bold ${houseProfit >= 0 ? 'text-green-400' : 'text-destructive'}`}>
+            {houseProfit >= 0 ? '+' : ''}{houseProfit}
+          </p>
+        </div>
+      </div>
+
+      {/* Live Bets */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" /> Live Bets
+        </h3>
+        <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+          {liveBets.map(bet => (
+            <div key={bet.id} className="nox-surface border border-border rounded-lg p-3 text-sm flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-7 h-7 rounded-md flex items-center justify-center ${bet.won ? 'bg-green-500/10' : 'bg-destructive/10'}`}>
+                  {bet.won ? <Star className="w-3.5 h-3.5 text-green-400" /> : <Trash2 className="w-3.5 h-3.5 text-destructive" />}
+                </div>
+                <div>
+                  <span className="text-foreground font-medium">@{bet.discord_username}</span>
+                  <span className="text-muted-foreground ml-2 capitalize">{bet.game}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="text-muted-foreground">Bet: {bet.bet_amount}</span>
+                <span className={bet.won ? 'text-green-400 font-bold' : 'text-destructive font-bold'}>
+                  {bet.won ? `+${bet.payout - bet.bet_amount}` : `-${bet.bet_amount}`}
+                </span>
+                <span className="text-muted-foreground/50">{new Date(bet.created_at).toLocaleTimeString()}</span>
+              </div>
+            </div>
+          ))}
+          {liveBets.length === 0 && <p className="text-muted-foreground text-center py-8">No bets recorded yet.</p>}
+        </div>
+      </div>
+
+      {/* User Chance Modifiers */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">User Chance Modifiers</h3>
+        <p className="text-xs text-muted-foreground mb-3">
+          Adjust win chances per user. Positive = more wins, Negative = more losses. Value is % modifier (e.g. +10 = +10% win chance).
+        </p>
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search users..."
+          className="bg-card border-border text-foreground placeholder:text-muted-foreground mb-3"
+        />
+        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          {filteredUsers.map(u => (
+            <div key={u.discord_username} className="nox-surface border border-border rounded-xl p-3 flex items-center gap-3">
+              <div className="flex-1">
+                <p className="text-foreground font-medium text-sm">@{u.discord_username}</p>
+                <p className="text-xs text-muted-foreground">
+                  {u.points} pts · Current modifier: <span className={u.casino_chance_modifier > 0 ? 'text-green-400' : u.casino_chance_modifier < 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                    {u.casino_chance_modifier > 0 ? '+' : ''}{u.casino_chance_modifier}%
+                  </span>
+                </p>
+              </div>
+              <Input
+                type="number"
+                value={modifierInputs[u.discord_username] ?? ''}
+                onChange={(e) => setModifierInputs(prev => ({ ...prev, [u.discord_username]: e.target.value }))}
+                placeholder={String(u.casino_chance_modifier)}
+                className="w-24 bg-background border-border text-foreground text-sm"
+              />
+              <Button variant="noxOutline" size="sm" onClick={() => updateModifier(u.discord_username)}
+                disabled={!modifierInputs[u.discord_username]}>
+                Set
+              </Button>
+            </div>
+          ))}
+          {filteredUsers.length === 0 && <p className="text-muted-foreground text-center py-4">No users found.</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default DevPortal;
