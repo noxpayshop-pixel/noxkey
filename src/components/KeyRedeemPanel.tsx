@@ -246,6 +246,14 @@ const KeyRedeemPanel = () => {
                     <CheckCircle2 className="w-6 h-6" />
                     <span className="text-lg font-semibold">Key Redeemed Successfully!</span>
                   </div>
+                  {result.bonusPoints && result.bonusPoints > 0 && (
+                    <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 flex items-center gap-3">
+                      <Coins className="w-5 h-5 text-accent" />
+                      <span className="text-sm text-foreground">
+                        🎉 You earned <span className="font-bold text-accent">+{result.bonusPoints} bonus points!</span>
+                      </span>
+                    </div>
+                  )}
                   <div className="bg-background rounded-xl p-4 border border-border space-y-3">
                     <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Your Deliverables:</p>
                     <div className="flex items-center gap-2">
@@ -270,12 +278,32 @@ const KeyRedeemPanel = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-yellow-400">
                     <AlertTriangle className="w-6 h-6" />
-                    <span className="text-lg font-semibold">Out of Stock</span>
+                    <span className="text-lg font-semibold">Out of Stock — You're on the Waitlist</span>
                   </div>
+                  {result.bonusPoints && result.bonusPoints > 0 && (
+                    <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 flex items-center gap-3">
+                      <Coins className="w-5 h-5 text-accent" />
+                      <span className="text-sm text-foreground">
+                        🎉 You earned <span className="font-bold text-accent">+{result.bonusPoints} bonus points!</span>
+                      </span>
+                    </div>
+                  )}
                   <p className="text-muted-foreground">
-                    Sorry, <span className="text-foreground font-semibold">{result.productName}</span> is currently out of stock.
-                    You'll receive a Discord notification when ready. Track it in <Link to="/myclaims" className="text-primary hover:underline">My Items</Link>.
+                    <span className="text-foreground font-semibold">{result.productName}</span> is currently out of stock.
+                    You'll receive a Discord notification when ready.
                   </p>
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                    <Gift className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="text-foreground font-medium">Free Gift Included!</p>
+                      <p className="text-muted-foreground">
+                        Since delivery isn't instant, you'll receive a <span className="text-primary font-semibold">free bonus gift</span> when your item is delivered!
+                      </p>
+                    </div>
+                  </div>
+                  <Link to="/myclaims">
+                    <Button variant="noxOutline" className="w-full">Track in My Items</Button>
+                  </Link>
                 </div>
               ) : (
                 <div className="space-y-4">
