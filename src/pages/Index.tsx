@@ -1,5 +1,6 @@
 import HeroSection from '@/components/HeroSection';
 import KeyRedeemPanel from '@/components/KeyRedeemPanel';
+import PromoSection from '@/components/PromoSection';
 import TrustSection from '@/components/TrustSection';
 import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
@@ -13,6 +14,7 @@ const Index = () => {
         <KeyRedeemPanel />
       </section>
 
+      <PromoSection />
       <TrustSection />
 
       {/* Footer */}

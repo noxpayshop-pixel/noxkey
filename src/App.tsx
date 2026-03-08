@@ -23,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dev" element={<DevPortal />} />
             <Route path="/myclaims" element={<MyClaims />} />
+            <Route path="/mypoints" element={<MyPoints />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
