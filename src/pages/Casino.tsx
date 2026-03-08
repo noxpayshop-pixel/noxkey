@@ -135,7 +135,7 @@ const Casino = () => {
     switch (selectedGame) {
       case 'coinflip': return <CoinFlipGame {...playProps} />;
       case 'mines': return <MinesGame {...deductProps} />;
-      case 'crash': return <CrashGame {...playProps} />;
+      case 'crash': return <CrashGame {...deductProps} />;
       case 'chicken': return <ChickenRoadGame {...deductProps} />;
       case 'towers': return <TowersGame {...playProps} />;
       case 'blackjack': return <BlackjackGame {...playProps} />;
