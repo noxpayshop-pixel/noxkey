@@ -88,25 +88,7 @@ const Casino = () => {
   // Reset session history when switching games
   useEffect(() => { setSessionHistory([]); }, [selectedGame]);
 
-  // Standard play handler (house-edge decides outcome)
-  const handlePlay = async (): Promise<{ won: boolean; payout: number; winStreak: number }> => {
-    if (!selectedGame || !discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
-    setPlaying(true);
-    try {
-      const res = await placeBet(discordUsername, selectedGame, betAmount, points);
-      setPoints(res.newPoints);
-      const net = res.won ? res.payout - betAmount : -betAmount;
-      setSessionHistory(prev => [{ won: res.won, amount: net }, ...prev]);
-      if (res.won) toast.success(`🎉 You won ${res.payout} points!`, { duration: 4000 });
-      else toast.error(`💀 You lost ${betAmount} points`, { duration: 3000 });
-      getUserStats(discordUsername).then(setStats);
-      return res;
-    } finally {
-      setPlaying(false);
-    }
-  };
-
-  // Deduct-first handler (for mines, chicken)
+  // Deduct-first handler (all games use this now)
   const handleDeduct = async () => {
     if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
     const res = await deductBet(discordUsername, betAmount, points);
