@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,18 +22,35 @@ interface Segment {
   textColor: string;
 }
 
-const SEGMENTS: Segment[] = [
+// Bet 5: smaller rewards, better odds (5 zeros out of 12)
+const SEGMENTS_5: Segment[] = [
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '+3', amount: 3, color: 'hsl(var(--primary))', textColor: '#fff' },
-  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--primary))', textColor: '#fff' },
   { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '+8', amount: 8, color: '#22c55e', textColor: '#fff' },
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '+2', amount: 2, color: 'hsl(var(--accent))', textColor: '#fff' },
-  { label: '+15', amount: 15, color: '#eab308', textColor: '#000' },
-  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+4', amount: 4, color: '#22c55e', textColor: '#fff' },
   { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '+25', amount: 25, color: '#f59e0b', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+6', amount: 6, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '+10', amount: 10, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+];
+
+// Bet 10: bigger rewards, worse odds (7 zeros out of 12)
+const SEGMENTS_10: Segment[] = [
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+5', amount: 5, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+12', amount: 12, color: '#22c55e', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+20', amount: 20, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+8', amount: 8, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '+50', amount: 50, color: '#f59e0b', textColor: '#000' },
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
 ];
 
@@ -44,20 +61,21 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
   const [result, setResult] = useState<{ won: boolean; payout: number; amount: number } | null>(null);
   const [lockedBet, setLockedBet] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [activeSegments, setActiveSegments] = useState<Segment[]>(SEGMENTS_5);
 
   const BET_OPTIONS = [5, 10];
 
-  const drawWheel = (canvas: HTMLCanvasElement) => {
+  const drawWheel = (canvas: HTMLCanvasElement, segments: Segment[]) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const size = canvas.width;
     const center = size / 2;
     const radius = center - 4;
-    const segAngle = (2 * Math.PI) / SEGMENTS.length;
+    const segAngle = (2 * Math.PI) / segments.length;
 
     ctx.clearRect(0, 0, size, size);
 
-    SEGMENTS.forEach((seg, i) => {
+    segments.forEach((seg, i) => {
       const startAngle = i * segAngle - Math.PI / 2;
       const endAngle = startAngle + segAngle;
 
@@ -71,7 +89,6 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Text
       ctx.save();
       ctx.translate(center, center);
       ctx.rotate(startAngle + segAngle / 2);
@@ -82,7 +99,6 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       ctx.restore();
     });
 
-    // Center circle
     ctx.beginPath();
     ctx.arc(center, center, 20, 0, 2 * Math.PI);
     ctx.fillStyle = 'hsl(var(--background))';
@@ -98,24 +114,28 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     setSpinning(true);
     setLockedBet(betAmount);
 
+    const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+    setActiveSegments(segments);
+    // Redraw wheel for current bet
+    if (canvasRef.current) drawWheel(canvasRef.current, segments);
+
     await onDeduct();
 
-    // Determine outcome
     let targetIdx: number;
     if (discordUsername) {
       const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
       if (!shouldWin) {
-        const zeroIndices = SEGMENTS.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
+        const zeroIndices = segments.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
         targetIdx = zeroIndices[Math.floor(Math.random() * zeroIndices.length)];
       } else {
-        const winIndices = SEGMENTS.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
+        const winIndices = segments.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
         targetIdx = winIndices[Math.floor(Math.random() * winIndices.length)];
       }
     } else {
-      targetIdx = Math.floor(Math.random() * SEGMENTS.length);
+      targetIdx = Math.floor(Math.random() * segments.length);
     }
 
-    const segAngle = 360 / SEGMENTS.length;
+    const segAngle = 360 / segments.length;
     const targetAngle = 360 - (targetIdx * segAngle + segAngle / 2);
     const spins = 5 + Math.floor(Math.random() * 3);
     const finalRotation = rotation + spins * 360 + targetAngle - (rotation % 360);
@@ -124,7 +144,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
 
     await new Promise(r => setTimeout(r, 4000));
 
-    const seg = SEGMENTS[targetIdx];
+    const seg = segments[targetIdx];
     const payout = seg.amount;
     const won = payout > 0;
     setResult({ won, payout, amount: seg.amount });
@@ -136,16 +156,29 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
   const canvasCallback = (canvas: HTMLCanvasElement | null) => {
     if (canvas) {
       (canvasRef as any).current = canvas;
-      drawWheel(canvas);
+      const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+      setActiveSegments(segments);
+      drawWheel(canvas, segments);
     }
   };
+
+  // Redraw wheel when bet amount changes
+  useEffect(() => {
+    if (canvasRef.current && !spinning) {
+      const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+      setActiveSegments(segments);
+      drawWheel(canvasRef.current, segments);
+    }
+  }, [betAmount]);
+
+  const maxPrize = betAmount >= 10 ? 50 : 10;
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
       {/* Game area */}
       <div className="nox-surface rounded-2xl border border-border p-8 flex flex-col items-center justify-center min-h-[600px]">
         <h2 className="text-lg font-black uppercase tracking-wider text-foreground mb-1">🎡 Lucky Wheel</h2>
-        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +25 points!</p>
+        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +{maxPrize} points!</p>
 
         <div className="relative">
           {/* Pointer */}
