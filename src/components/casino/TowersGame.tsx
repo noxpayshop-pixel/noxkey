@@ -15,14 +15,18 @@ interface Props {
   sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-const ROWS = 8;
+const ROWS = 9;
 const COLS = 3;
+
+type Difficulty = 'easy' | 'hard';
+const MINES_PER_ROW: Record<Difficulty, number> = { easy: 1, hard: 2 };
 
 export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
   const { discordUsername } = useDiscordAuth();
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [gameActive, setGameActive] = useState(false);
   const [currentRow, setCurrentRow] = useState(0);
-  const [safeColumns, setSafeColumns] = useState<number[]>([]);
+  const [mineColumns, setMineColumns] = useState<number[][]>([]);
   const [selected, setSelected] = useState<Array<number | null>>(Array(ROWS).fill(null));
   const [hitTrap, setHitTrap] = useState(false);
   const [cashedOut, setCashedOut] = useState(false);
@@ -30,11 +34,26 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
   const [lockedBet, setLockedBet] = useState(0);
   const [maxSafeRows, setMaxSafeRows] = useState(999);
 
-  const getMultiplier = (row: number) => parseFloat((1 + row * 0.5).toFixed(2));
+  const getMultiplier = (row: number) => {
+    const base = difficulty === 'easy' ? 0.30 : 0.80;
+    return parseFloat((1 + row * base).toFixed(2));
+  };
+
+  const generateMines = () => {
+    const minesCount = MINES_PER_ROW[difficulty];
+    return Array.from({ length: ROWS }, () => {
+      const mines: number[] = [];
+      while (mines.length < minesCount) {
+        const col = Math.floor(Math.random() * COLS);
+        if (!mines.includes(col)) mines.push(col);
+      }
+      return mines;
+    });
+  };
 
   const startGame = async () => {
-    const safes = Array.from({ length: ROWS }, () => Math.floor(Math.random() * COLS));
-    setSafeColumns(safes);
+    const mines = generateMines();
+    setMineColumns(mines);
     setCurrentRow(0);
     setSelected(Array(ROWS).fill(null));
     setHitTrap(false);
@@ -47,7 +66,7 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
         betAmount, currentPoints: points, discordUsername,
       });
       if (!shouldWin) {
-        setMaxSafeRows(Math.floor(Math.random() * 2)); // 0-1 safe rows
+        setMaxSafeRows(Math.floor(Math.random() * 2));
       } else {
         setMaxSafeRows(Math.max(2, Math.floor(ROWS * (0.3 + adjustedWinChance * 0.5))));
       }
@@ -64,17 +83,17 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
     newSelected[row] = col;
     setSelected(newSelected);
 
-    // If exceeded max safe rows, force wrong pick
-    let isSafe = col === safeColumns[row];
-    if (row >= maxSafeRows && isSafe) {
-      // Move safe column away from player's pick
-      const newSafes = [...safeColumns];
-      newSafes[row] = (col + 1 + Math.floor(Math.random() * (COLS - 1))) % COLS;
-      setSafeColumns(newSafes);
-      isSafe = false;
+    let isMine = mineColumns[row]?.includes(col);
+
+    // If exceeded max safe rows, force a mine hit
+    if (row >= maxSafeRows && !isMine) {
+      const newMines = [...mineColumns];
+      newMines[row] = [col]; // put mine where player clicked
+      setMineColumns(newMines);
+      isMine = true;
     }
 
-    if (!isSafe) {
+    if (isMine) {
       setHitTrap(true);
       setGameActive(false);
       await onComplete(false, 0);
@@ -83,7 +102,7 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
 
     const mult = getMultiplier(row + 1);
     setCurrentMult(mult);
-    
+
     if (row + 1 >= ROWS) {
       setCashedOut(true);
       setGameActive(false);
@@ -100,49 +119,62 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
     await onComplete(true, Math.floor(lockedBet * currentMult));
   };
 
-  const presets = [1, 5, 10, 25, 50];
   const isGameOver = hitTrap || cashedOut;
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Towers</h2>
-        <p className="text-xs text-muted-foreground mb-6">Climb higher for bigger multipliers</p>
+      {/* Game area */}
+      <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center min-h-[600px]">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-lg">🏰</span>
+          <h2 className="text-lg font-black uppercase tracking-wider text-foreground">Towers</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-8">Climb the tower, avoid the mines</p>
 
-        <div className="w-full max-w-[300px] space-y-2 flex flex-col-reverse">
+        <div className="w-full max-w-[340px] space-y-1.5 flex flex-col-reverse flex-1 justify-center">
           {Array.from({ length: ROWS }, (_, row) => (
-            <div key={row} className="flex gap-2">
-              <div className="w-12 flex items-center justify-center text-xs font-bold text-muted-foreground">
-                {getMultiplier(row + 1)}x
-              </div>
+            <div key={row} className="flex gap-1.5 items-center">
               {Array.from({ length: COLS }, (_, col) => {
                 const isSelected = selected[row] === col;
-                const isSafe = safeColumns[row] === col;
+                const isMine = mineColumns[row]?.includes(col);
                 const showResult = isGameOver && row <= (hitTrap ? currentRow : currentRow - 1);
                 const isCurrentRow = row === currentRow && gameActive;
+                const isPassed = row < currentRow && selected[row] !== null;
 
                 return (
                   <motion.button
                     key={col}
-                    whileHover={isCurrentRow ? { scale: 1.05 } : {}}
+                    whileHover={isCurrentRow ? { scale: 1.03 } : {}}
+                    whileTap={isCurrentRow ? { scale: 0.97 } : {}}
                     onClick={() => handlePick(row, col)}
                     disabled={!gameActive || row !== currentRow}
-                    className={`flex-1 h-14 rounded-xl flex items-center justify-center border transition-all ${
-                      isSelected && !isSafe ? 'bg-destructive/20 border-destructive' :
-                      isSelected && isSafe ? 'bg-green-500/10 border-green-500/30' :
-                      showResult && isSafe ? 'bg-green-500/5 border-green-500/20' :
-                      showResult && !isSafe ? 'bg-card border-border' :
-                      isCurrentRow ? 'bg-card border-primary/40 hover:bg-primary/5 cursor-pointer' :
-                      row < currentRow && selected[row] === col ? 'bg-green-500/10 border-green-500/30' :
-                      'bg-card border-border opacity-50'
+                    className={`flex-1 h-12 rounded-lg flex items-center justify-center border transition-all duration-150 ${
+                      isSelected && isMine ? 'bg-destructive/20 border-destructive' :
+                      isSelected && !isMine ? 'bg-green-500/10 border-green-500/40' :
+                      showResult && isMine ? 'bg-destructive/5 border-destructive/20' :
+                      showResult && !isMine ? 'bg-card/50 border-border/50' :
+                      isPassed && selected[row] === col ? 'bg-green-500/10 border-green-500/30' :
+                      isCurrentRow ? 'bg-card border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer' :
+                      'bg-card/40 border-border/40'
                     }`}
                   >
-                    {isSelected && !isSafe && <Skull className="w-5 h-5 text-destructive" />}
-                    {isSelected && isSafe && <Zap className="w-5 h-5 text-green-400" />}
-                    {showResult && isSafe && !isSelected && <div className="w-2 h-2 rounded-full bg-green-500/30" />}
+                    {isSelected && isMine && <Skull className="w-4 h-4 text-destructive" />}
+                    {isSelected && !isMine && <Zap className="w-4 h-4 text-green-400" />}
+                    {isPassed && selected[row] === col && !isSelected && <Zap className="w-4 h-4 text-green-400" />}
+                    {showResult && isMine && !isSelected && <div className="w-1.5 h-1.5 rounded-full bg-destructive/40" />}
+                    {!isSelected && !showResult && !isPassed && isCurrentRow && <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/20" />}
+                    {!isSelected && !showResult && !isPassed && !isCurrentRow && <div className="w-1 h-1 rounded-full bg-muted-foreground/10" />}
                   </motion.button>
                 );
               })}
+              {/* Multiplier label */}
+              <span className={`w-14 text-right text-xs font-bold ${
+                row < currentRow ? 'text-green-400' :
+                row === currentRow && gameActive ? 'text-primary' :
+                'text-muted-foreground/40'
+              }`}>
+                {getMultiplier(row + 1)}x
+              </span>
             </div>
           ))}
         </div>
@@ -160,6 +192,7 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
         )}
       </div>
 
+      {/* Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -172,19 +205,40 @@ export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, 
           {!gameActive ? (
             <>
               <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Bet Amount</label>
-                <input type="number" min={1} max={points} value={betAmount}
-                  onChange={(e) => setBetAmount(Math.max(1, Math.min(points, parseInt(e.target.value) || 1)))}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground text-lg font-bold focus:outline-none focus:border-primary transition-colors" />
-                <div className="flex gap-1.5 mt-3">
-                  {presets.map(p => (
-                    <button key={p} onClick={() => setBetAmount(Math.min(p, points))}
-                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
-                        betAmount === p ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'
-                      }`}>{p}</button>
+                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Bet Amount ($)</label>
+                <div className="flex items-center gap-1.5">
+                  <input type="number" min={1} max={points} value={betAmount}
+                    onChange={(e) => setBetAmount(Math.max(1, Math.min(points, parseInt(e.target.value) || 1)))}
+                    className="flex-1 px-4 py-3 bg-background border border-border rounded-xl text-foreground text-lg font-bold focus:outline-none focus:border-primary transition-colors" />
+                  <button onClick={() => setBetAmount(Math.max(1, Math.floor(betAmount / 2)))}
+                    className="px-3 py-3 rounded-xl border border-border text-muted-foreground hover:border-primary/30 text-sm font-bold">½</button>
+                  <button onClick={() => setBetAmount(Math.min(betAmount * 2, points))}
+                    className="px-3 py-3 rounded-xl border border-border text-muted-foreground hover:border-primary/30 text-sm font-bold">2x</button>
+                  <button onClick={() => setBetAmount(points)}
+                    className="px-3 py-3 rounded-xl border border-primary/50 text-primary hover:bg-primary/10 text-sm font-bold">Max</button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Difficulty</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['easy', 'hard'] as const).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => setDifficulty(d)}
+                      className={`py-3 rounded-xl border text-center transition-all ${
+                        difficulty === d
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/30'
+                      }`}
+                    >
+                      <span className="text-sm font-black uppercase block">{d}</span>
+                      <span className="text-[10px] text-muted-foreground">{MINES_PER_ROW[d]} Mine{MINES_PER_ROW[d] > 1 ? 's' : ''}</span>
+                    </button>
                   ))}
                 </div>
               </div>
+
               <Button variant="nox" className="w-full h-14 text-lg font-bold"
                 disabled={betAmount < 1 || betAmount > points || points === 0}
                 onClick={startGame}>
