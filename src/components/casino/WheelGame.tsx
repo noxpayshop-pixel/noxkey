@@ -162,12 +162,23 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     }
   };
 
+  // Redraw wheel when bet amount changes
+  useEffect(() => {
+    if (canvasRef.current && !spinning) {
+      const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+      setActiveSegments(segments);
+      drawWheel(canvasRef.current, segments);
+    }
+  }, [betAmount]);
+
+  const maxPrize = betAmount >= 10 ? 50 : 10;
+
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
       {/* Game area */}
       <div className="nox-surface rounded-2xl border border-border p-8 flex flex-col items-center justify-center min-h-[600px]">
         <h2 className="text-lg font-black uppercase tracking-wider text-foreground mb-1">🎡 Lucky Wheel</h2>
-        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +25 points!</p>
+        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +{maxPrize} points!</p>
 
         <div className="relative">
           {/* Pointer */}
