@@ -279,13 +279,17 @@ export interface NoxSettings {
   discordInvite: string;
   feedbackImages: string[];
   vouchPlatforms: VouchPlatform[];
+  enabledCasinoGames: string[];
 }
+
+const ALL_CASINO_GAMES = ['coinflip', 'crash', 'mines', 'towers', 'blackjack', 'limbo', 'splat'];
 
 const defaultSettings: NoxSettings = {
   vouchUrl: '',
   discordInvite: 'https://discord.gg/thenox',
   feedbackImages: [],
   vouchPlatforms: [],
+  enabledCasinoGames: ALL_CASINO_GAMES,
 };
 
 export function getSettings(): NoxSettings {
