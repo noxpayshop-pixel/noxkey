@@ -216,12 +216,15 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-muted-foreground uppercase tracking-widest">Mines</label>
-                  <span className="text-sm font-bold text-foreground">{mineCount}</span>
+                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Mines</label>
+                <div className="flex gap-1.5">
+                  {MINE_OPTIONS.map(m => (
+                    <button key={m} onClick={() => setMineCount(m)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
+                        mineCount === m ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'
+                      }`}>{m}</button>
+                  ))}
                 </div>
-                <input type="range" min={1} max={20} value={mineCount} onChange={(e) => setMineCount(parseInt(e.target.value))}
-                  className="w-full accent-primary" />
               </div>
 
               <Button variant="nox" className="w-full h-14 text-lg font-bold"
