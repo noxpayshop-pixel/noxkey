@@ -173,7 +173,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
         {result && !spinning && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-8 text-center">
             <p className={`text-2xl font-black ${result.won ? 'text-green-400' : 'text-destructive'}`}>
-              {result.multiplier === 0 ? 'BUST!' : `${result.multiplier}x — YOU WIN!`}
+              {result.amount === 0 ? 'BUST!' : `+${result.amount} POINTS!`}
             </p>
             <p className={`text-sm font-bold mt-1 ${result.won ? 'text-green-400' : 'text-destructive'}`}>
               {result.won ? `+${result.payout} points` : `-${lockedBet} points`}
