@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Coins, Zap, Skull } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
   betAmount: number;
   setBetAmount: (n: number) => void;
-  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  onDeduct: () => Promise<void>;
+  onComplete: (won: boolean, payout: number) => Promise<void>;
   playing: boolean;
   sessionHistory: Array<{ won: boolean; amount: number }>;
 }
@@ -15,7 +18,8 @@ interface Props {
 const ROWS = 8;
 const COLS = 3;
 
-export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
+export default function TowersGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [gameActive, setGameActive] = useState(false);
   const [currentRow, setCurrentRow] = useState(0);
   const [safeColumns, setSafeColumns] = useState<number[]>([]);
@@ -23,11 +27,12 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
   const [hitTrap, setHitTrap] = useState(false);
   const [cashedOut, setCashedOut] = useState(false);
   const [currentMult, setCurrentMult] = useState(1.0);
+  const [lockedBet, setLockedBet] = useState(0);
+  const [maxSafeRows, setMaxSafeRows] = useState(999);
 
   const getMultiplier = (row: number) => parseFloat((1 + row * 0.5).toFixed(2));
 
-  const startGame = () => {
-    // Generate safe columns (1 safe per row)
+  const startGame = async () => {
     const safes = Array.from({ length: ROWS }, () => Math.floor(Math.random() * COLS));
     setSafeColumns(safes);
     setCurrentRow(0);
@@ -35,6 +40,20 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
     setHitTrap(false);
     setCashedOut(false);
     setCurrentMult(1.0);
+    setLockedBet(betAmount);
+
+    if (discordUsername) {
+      const { shouldWin, adjustedWinChance } = await getRiggedOutcome({
+        betAmount, currentPoints: points, discordUsername,
+      });
+      if (!shouldWin) {
+        setMaxSafeRows(Math.floor(Math.random() * 2)); // 0-1 safe rows
+      } else {
+        setMaxSafeRows(Math.max(2, Math.floor(ROWS * (0.3 + adjustedWinChance * 0.5))));
+      }
+    }
+
+    await onDeduct();
     setGameActive(true);
   };
 
@@ -45,10 +64,20 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
     newSelected[row] = col;
     setSelected(newSelected);
 
-    if (col !== safeColumns[row]) {
+    // If exceeded max safe rows, force wrong pick
+    let isSafe = col === safeColumns[row];
+    if (row >= maxSafeRows && isSafe) {
+      // Move safe column away from player's pick
+      const newSafes = [...safeColumns];
+      newSafes[row] = (col + 1 + Math.floor(Math.random() * (COLS - 1))) % COLS;
+      setSafeColumns(newSafes);
+      isSafe = false;
+    }
+
+    if (!isSafe) {
       setHitTrap(true);
       setGameActive(false);
-      await onPlay(); // loss
+      await onComplete(false, 0);
       return;
     }
 
@@ -58,7 +87,7 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
     if (row + 1 >= ROWS) {
       setCashedOut(true);
       setGameActive(false);
-      await onPlay(); // win - reached top
+      await onComplete(true, Math.floor(lockedBet * mult));
     } else {
       setCurrentRow(row + 1);
     }
@@ -68,7 +97,7 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
     if (!gameActive || currentRow === 0) return;
     setCashedOut(true);
     setGameActive(false);
-    await onPlay();
+    await onComplete(true, Math.floor(lockedBet * currentMult));
   };
 
   const presets = [1, 5, 10, 25, 50];
@@ -76,7 +105,6 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Tower Grid */}
       <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center">
         <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Towers</h2>
         <p className="text-xs text-muted-foreground mb-6">Climb higher for bigger multipliers</p>
@@ -132,7 +160,6 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
         )}
       </div>
 
-      {/* Controls */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -174,10 +201,28 @@ export default function TowersGame({ points, betAmount, setBetAmount, onPlay, pl
               <Button variant="nox" className="w-full h-14 text-lg font-bold"
                 disabled={currentRow === 0}
                 onClick={handleCashout}>
-                CASHOUT ({Math.floor(betAmount * currentMult)})
+                CASHOUT ({Math.floor(lockedBet * currentMult)})
               </Button>
             </>
           )}
+        </div>
+
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

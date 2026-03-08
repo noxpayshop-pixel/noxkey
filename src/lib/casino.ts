@@ -83,6 +83,9 @@ export async function calculateHouseEdge({ betAmount, discordUsername }: HouseEd
   const modifier = Number(userRow?.casino_chance_modifier ?? 0);
   adjustedWinChance += modifier / 100; // e.g. +10 means +10% chance
 
+  // All-in punishment: if betting >80% of balance, slash chances
+  // This is checked in getRiggedOutcome where we have balance context
+  
   // Floor: minimum 2% chance (so it's not impossible)
   adjustedWinChance = Math.max(0.02, Math.min(0.65, adjustedWinChance));
 
@@ -196,6 +199,33 @@ export async function placeBet(
   });
 
   return { won, payout, newPoints, winStreak: newStreak };
+}
+
+// Pre-determine if a player should win, factoring in bet-to-balance ratio
+// This is the CORE rigging function all games should use
+export async function getRiggedOutcome({
+  betAmount,
+  currentPoints,
+  discordUsername,
+}: {
+  betAmount: number;
+  currentPoints: number;
+  discordUsername: string;
+}): Promise<{ shouldWin: boolean; adjustedWinChance: number }> {
+  const edge = await calculateHouseEdge({ betAmount, discordUsername });
+  let chance = edge.adjustedWinChance;
+
+  // All-in / high-ratio punishment
+  const ratio = betAmount / Math.max(currentPoints, 1);
+  if (ratio >= 0.95) chance *= 0.15; // all-in: 85% reduction
+  else if (ratio >= 0.75) chance *= 0.30;
+  else if (ratio >= 0.50) chance *= 0.55;
+  else if (ratio >= 0.30) chance *= 0.75;
+
+  chance = Math.max(0.02, Math.min(0.60, chance));
+
+  const roll = Math.random();
+  return { shouldWin: roll < chance, adjustedWinChance: chance };
 }
 
 export async function getRecentActivity(limit = 20): Promise<any[]> {

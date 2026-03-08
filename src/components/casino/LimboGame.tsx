@@ -1,37 +1,60 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Coins, Flame, Loader2 } from 'lucide-react';
+import { Coins, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
   betAmount: number;
   setBetAmount: (n: number) => void;
-  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  onDeduct: () => Promise<void>;
+  onComplete: (won: boolean, payout: number) => Promise<void>;
   playing: boolean;
   sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-export default function LimboGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
+export default function LimboGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [targetMult, setTargetMult] = useState(2.0);
   const [resultMult, setResultMult] = useState<number | null>(null);
   const [won, setWon] = useState<boolean | null>(null);
   const [animating, setAnimating] = useState(false);
+  const [lockedBet, setLockedBet] = useState(0);
 
   const handlePlay = async () => {
     setAnimating(true);
     setResultMult(null);
     setWon(null);
-    
-    // Generate result multiplier (exponential distribution)
-    const result = parseFloat((1 + Math.random() * 8).toFixed(2));
-    
+    setLockedBet(betAmount);
+
+    await onDeduct();
+
+    // Pre-determine outcome
+    let result: number;
+    if (discordUsername) {
+      const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
+      if (shouldWin) {
+        // Generate result >= target
+        result = targetMult + Math.random() * 3;
+      } else {
+        // Generate result below target
+        result = 1 + Math.random() * Math.max(0.1, targetMult - 1.1);
+      }
+    } else {
+      result = 1 + Math.random() * 8;
+    }
+    result = parseFloat(result.toFixed(2));
+
     await new Promise(r => setTimeout(r, 800));
     setResultMult(result);
     const isWin = result >= targetMult;
     setWon(isWin);
     setAnimating(false);
-    await onPlay();
+
+    const payout = isWin ? Math.floor(betAmount * targetMult) : 0;
+    await onComplete(isWin, payout);
   };
 
   const presets = [1, 5, 10, 25, 50];
@@ -74,12 +97,11 @@ export default function LimboGame({ points, betAmount, setBetAmount, onPlay, pla
         {won !== null && (
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className={`mt-6 text-xl font-black ${won ? 'text-green-400' : 'text-destructive'}`}>
-            {won ? `WIN! +${Math.floor(betAmount * targetMult)}` : `MISS! -${betAmount}`}
+            {won ? `WIN! +${Math.floor(lockedBet * targetMult)}` : `MISS! -${lockedBet}`}
           </motion.p>
         )}
       </div>
 
-      {/* Controls */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -123,6 +145,24 @@ export default function LimboGame({ points, betAmount, setBetAmount, onPlay, pla
             onClick={handlePlay}>
             {animating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'PLAY'}
           </Button>
+        </div>
+
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

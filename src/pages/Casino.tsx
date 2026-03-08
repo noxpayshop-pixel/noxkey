@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
 import { supabase } from '@/integrations/supabase/client';
-import { placeBet, deductBet, completeBet, getRecentActivity, getUserStats } from '@/lib/casino';
+import { deductBet, completeBet, getRecentActivity, getUserStats } from '@/lib/casino';
 import { getSettings } from '@/lib/store';
 import { Link } from 'react-router-dom';
 import {
@@ -43,8 +43,7 @@ const ALL_GAMES: GameDef[] = [
   { id: 'splat', name: 'Splat', description: 'Pick a color, watch the splat!', icon: <Droplets className="w-5 h-5" />, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
 ];
 
-// Games that use deduct-first flow (player-driven outcomes)
-const DEDUCT_FIRST_GAMES = ['mines', 'chicken', 'crash'];
+// All games now use deduct-first flow with rigged house edge
 
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
@@ -89,25 +88,7 @@ const Casino = () => {
   // Reset session history when switching games
   useEffect(() => { setSessionHistory([]); }, [selectedGame]);
 
-  // Standard play handler (house-edge decides outcome)
-  const handlePlay = async (): Promise<{ won: boolean; payout: number; winStreak: number }> => {
-    if (!selectedGame || !discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
-    setPlaying(true);
-    try {
-      const res = await placeBet(discordUsername, selectedGame, betAmount, points);
-      setPoints(res.newPoints);
-      const net = res.won ? res.payout - betAmount : -betAmount;
-      setSessionHistory(prev => [{ won: res.won, amount: net }, ...prev]);
-      if (res.won) toast.success(`🎉 You won ${res.payout} points!`, { duration: 4000 });
-      else toast.error(`💀 You lost ${betAmount} points`, { duration: 3000 });
-      getUserStats(discordUsername).then(setStats);
-      return res;
-    } finally {
-      setPlaying(false);
-    }
-  };
-
-  // Deduct-first handler (for mines, chicken)
+  // Deduct-first handler (all games use this now)
   const handleDeduct = async () => {
     if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
     const res = await deductBet(discordUsername, betAmount, points);
@@ -128,19 +109,17 @@ const Casino = () => {
   const GAMES = ALL_GAMES.filter(g => enabledGames.includes(g.id));
 
   const renderGame = () => {
-    const commonProps = { points, betAmount, setBetAmount, playing, sessionHistory };
-    const deductProps = { ...commonProps, onDeduct: handleDeduct, onComplete: handleComplete };
-    const playProps = { ...commonProps, onPlay: handlePlay };
+    const props = { points, betAmount, setBetAmount, playing, sessionHistory, onDeduct: handleDeduct, onComplete: handleComplete };
 
     switch (selectedGame) {
-      case 'coinflip': return <CoinFlipGame {...playProps} />;
-      case 'mines': return <MinesGame {...deductProps} />;
-      case 'crash': return <CrashGame {...deductProps} />;
-      case 'chicken': return <ChickenRoadGame {...deductProps} />;
-      case 'towers': return <TowersGame {...playProps} />;
-      case 'blackjack': return <BlackjackGame {...playProps} />;
-      case 'limbo': return <LimboGame {...playProps} />;
-      case 'splat': return <SplatGame {...playProps} />;
+      case 'coinflip': return <CoinFlipGame {...props} />;
+      case 'mines': return <MinesGame {...props} />;
+      case 'crash': return <CrashGame {...props} />;
+      case 'chicken': return <ChickenRoadGame {...props} />;
+      case 'towers': return <TowersGame {...props} />;
+      case 'blackjack': return <BlackjackGame {...props} />;
+      case 'limbo': return <LimboGame {...props} />;
+      case 'splat': return <SplatGame {...props} />;
       default: return null;
     }
   };
