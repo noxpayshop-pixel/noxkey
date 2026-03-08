@@ -10,6 +10,7 @@ const KeyRedeemPanel = () => {
   const [email, setEmail] = useState('');
   const [discord, setDiscord] = useState('');
   const [step, setStep] = useState<'code' | 'info' | 'result'>('code');
+  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
     item?: string;
@@ -24,11 +25,19 @@ const KeyRedeemPanel = () => {
     setStep('info');
   };
 
-  const handleRedeem = () => {
+  const handleRedeem = async () => {
     if (!email.trim() || !discord.trim()) return;
-    const res = redeemCode(code.trim(), email.trim(), discord.trim());
-    setResult(res);
-    setStep('result');
+    setLoading(true);
+    try {
+      const res = await redeemCode(code.trim(), email.trim(), discord.trim());
+      setResult(res);
+      setStep('result');
+    } catch {
+      setResult({ success: false });
+      setStep('result');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopy = (text: string) => {
@@ -95,7 +104,9 @@ const KeyRedeemPanel = () => {
               />
               <div className="flex gap-3">
                 <Button variant="ghost" onClick={() => setStep('code')}>Back</Button>
-                <Button variant="nox" onClick={handleRedeem} className="flex-1">Claim Deliverables</Button>
+                <Button variant="nox" onClick={handleRedeem} className="flex-1" disabled={loading}>
+                  {loading ? 'Claiming...' : 'Claim Deliverables'}
+                </Button>
               </div>
             </motion.div>
           )}
@@ -133,16 +144,8 @@ const KeyRedeemPanel = () => {
                   </div>
                   <p className="text-muted-foreground">
                     Sorry, we are currently out of stock for <span className="text-foreground font-semibold">{result.productName}</span>.
-                    Your Discord username and email have been saved — you'll automatically receive your deliverables when we restock!
+                    Your Discord username and email have been saved — you'll automatically receive your deliverables via DM when we restock!
                   </p>
-                  <a
-                    href="https://discord.gg/thenox"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-center text-primary hover:text-accent transition-colors underline"
-                  >
-                    Join our Discord for updates →
-                  </a>
                 </div>
               ) : (
                 <div className="space-y-4">
