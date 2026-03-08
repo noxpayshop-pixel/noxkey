@@ -734,7 +734,26 @@ function AccountsView() {
     setSelectedUser(username);
   };
 
+  const [givePointsAmount, setGivePointsAmount] = useState('');
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const handleGivePoints = async (username: string, amount: number) => {
+    if (amount === 0) return;
+    const { data: existing } = await supabase.from('user_points').select('points').eq('discord_username', username).single();
+    if (existing) {
+      await supabase.from('user_points').update({ points: existing.points + amount, updated_at: new Date().toISOString() }).eq('discord_username', username);
+    } else {
+      await supabase.from('user_points').insert({ discord_username: username, points: Math.max(0, amount) });
+    }
+    await supabase.from('point_transactions').insert({
+      discord_username: username, amount, type: 'admin',
+      description: `Admin ${amount > 0 ? 'gave' : 'removed'} points`,
+    });
+    setAccounts(prev => prev.map(a => a.discord_username === username ? { ...a, points: (existing?.points ?? 0) + amount } : a));
+    toast.success(`${amount > 0 ? 'Gave' : 'Removed'} ${Math.abs(amount)} points ${amount > 0 ? 'to' : 'from'} @${username}`);
+    setGivePointsAmount('');
+  };
 
   const selectedAccount = accounts.find(a => a.discord_username === selectedUser);
 
