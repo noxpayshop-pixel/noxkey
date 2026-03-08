@@ -89,15 +89,16 @@ const Casino = () => {
   useEffect(() => { setSessionHistory([]); }, [selectedGame]);
 
   const handleDeduct = async () => {
-    if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
-    const res = await deductBet(discordUsername, betAmount, points);
-    setPoints(res.newPoints);
+    if (!discordUsername || betAmount < 1 || betAmount > pointsRef.current) throw new Error('Invalid');
+    const res = await deductBet(discordUsername, betAmount, pointsRef.current);
+    setPointsTracked(res.newPoints);
   };
 
   const handleComplete = async (won: boolean, payout: number) => {
     if (!selectedGame || !discordUsername) return;
-    const res = await completeBet(discordUsername, selectedGame, betAmount, won, payout, points);
-    setPoints(res.newPoints);
+    const currentPts = pointsRef.current;
+    const res = await completeBet(discordUsername, selectedGame, betAmount, won, payout, currentPts);
+    setPointsTracked(res.newPoints);
     const net = won ? payout - betAmount : -betAmount;
     setSessionHistory(prev => [{ won, amount: net }, ...prev]);
     if (won) toast.success(`🎉 You won ${payout} points!`, { duration: 4000 });
