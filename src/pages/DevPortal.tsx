@@ -685,6 +685,7 @@ interface UserAccount {
   discord_username: string;
   claimCount: number;
   requestCount: number;
+  points: number;
   claims: Array<Redemption & { product_name: string }>;
 }
 
@@ -702,14 +703,16 @@ function AccountsView() {
 
       const accs: UserAccount[] = [];
       for (const u of users) {
-        const [claimRes, reqRes] = await Promise.all([
+        const [claimRes, reqRes, pointsRes] = await Promise.all([
           supabase.from('redemptions').select('id', { count: 'exact', head: true }).eq('discord', u.discord_username),
           supabase.from('replacement_requests').select('id', { count: 'exact', head: true }).eq('discord_username', u.discord_username),
+          supabase.from('user_points').select('points').eq('discord_username', u.discord_username).single(),
         ]);
         accs.push({
           discord_username: u.discord_username,
           claimCount: claimRes.count ?? 0,
           requestCount: reqRes.count ?? 0,
+          points: pointsRes.data?.points ?? 0,
           claims: [],
         });
       }
@@ -731,7 +734,26 @@ function AccountsView() {
     setSelectedUser(username);
   };
 
+  const [givePointsAmount, setGivePointsAmount] = useState('');
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const handleGivePoints = async (username: string, amount: number) => {
+    if (amount === 0) return;
+    const { data: existing } = await supabase.from('user_points').select('points').eq('discord_username', username).single();
+    if (existing) {
+      await supabase.from('user_points').update({ points: existing.points + amount, updated_at: new Date().toISOString() }).eq('discord_username', username);
+    } else {
+      await supabase.from('user_points').insert({ discord_username: username, points: Math.max(0, amount) });
+    }
+    await supabase.from('point_transactions').insert({
+      discord_username: username, amount, type: 'admin',
+      description: `Admin ${amount > 0 ? 'gave' : 'removed'} points`,
+    });
+    setAccounts(prev => prev.map(a => a.discord_username === username ? { ...a, points: (existing?.points ?? 0) + amount } : a));
+    toast.success(`${amount > 0 ? 'Gave' : 'Removed'} ${Math.abs(amount)} points ${amount > 0 ? 'to' : 'from'} @${username}`);
+    setGivePointsAmount('');
+  };
 
   const selectedAccount = accounts.find(a => a.discord_username === selectedUser);
 
@@ -748,8 +770,23 @@ function AccountsView() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">@{selectedUser}</h3>
-            <p className="text-xs text-muted-foreground">{selectedAccount.claimCount} claims · {selectedAccount.requestCount} replacement requests</p>
+            <p className="text-xs text-muted-foreground">{selectedAccount.claimCount} claims · {selectedAccount.requestCount} requests · <span className="text-primary font-medium">{selectedAccount.points} pts</span></p>
           </div>
+        </div>
+
+        {/* Give Points */}
+        <div className="nox-surface rounded-xl border border-border p-4 flex items-center gap-3">
+          <Coins className="w-5 h-5 text-primary shrink-0" />
+          <Input
+            type="number"
+            value={givePointsAmount}
+            onChange={(e) => setGivePointsAmount(e.target.value)}
+            placeholder="Points (negative to remove)"
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground flex-1"
+          />
+          <Button variant="nox" size="sm" onClick={() => handleGivePoints(selectedUser!, parseInt(givePointsAmount) || 0)} disabled={!givePointsAmount || parseInt(givePointsAmount) === 0}>
+            Give
+          </Button>
         </div>
 
         <div className="space-y-2">
@@ -801,7 +838,7 @@ function AccountsView() {
               <User className="w-4 h-4 text-muted-foreground" />
               <div>
                 <p className="text-foreground font-medium">@{a.discord_username}</p>
-                <p className="text-xs text-muted-foreground">{a.claimCount} claims · {a.requestCount} requests</p>
+                <p className="text-xs text-muted-foreground">{a.claimCount} claims · {a.requestCount} requests · <span className="text-primary">{a.points} pts</span></p>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-muted-foreground" />

@@ -95,7 +95,7 @@ const TrustSection = () => {
                   <img
                     src={img}
                     alt={`Feedback ${i + 1}`}
-                    className="max-h-64 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                    className="w-auto h-auto max-w-full rounded-lg group-hover:scale-[1.02] transition-transform duration-300"
                     loading="lazy"
                   />
                 </motion.div>
