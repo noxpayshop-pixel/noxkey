@@ -1,9 +1,11 @@
-import { motion } from 'framer-motion';
-import { Shield, Globe, Users, Star } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shield, Globe, Users, Star, ExternalLink, X } from 'lucide-react';
 import { getSettings } from '@/lib/store';
 
 const TrustSection = () => {
   const settings = getSettings();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const stats = [
     { icon: Globe, label: 'Countries', value: '50+', color: 'text-blue-400' },
@@ -12,13 +14,15 @@ const TrustSection = () => {
     { icon: Star, label: 'Average Rating', value: '4.9/5', color: 'text-yellow-400' },
   ];
 
+  const platforms = settings.vouchPlatforms?.filter(p => p.name && p.url) || [];
+  const images = settings.feedbackImages?.filter(Boolean) || [];
+
   return (
     <section className="py-24 px-6 relative">
-      {/* Section divider */}
       <div className="absolute top-0 left-0 right-0 nox-divider" />
 
       <div className="max-w-5xl mx-auto">
-        {/* Heading with asymmetric layout */}
+        {/* Heading */}
         <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16 gap-4">
           <div>
             <motion.p
@@ -67,46 +71,106 @@ const TrustSection = () => {
           ))}
         </div>
 
-        {/* Vouch CTA */}
-        <motion.div
-          className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Check our <span className="text-foreground font-medium">MyVouch.es</span>, <span className="text-foreground font-medium">Sellauth</span>, or <span className="text-foreground font-medium">Discord server</span> to see all our verified vouches.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {settings.vouchUrl && (
-                <a
-                  href={settings.vouchUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
+        {/* Feedback Gallery */}
+        {images.length > 0 && (
+          <motion.div
+            className="mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+          >
+            <p className="text-xs font-semibold text-primary uppercase tracking-[0.3em] mb-6">Customer Feedback</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {images.map((img, i) => (
+                <motion.div
+                  key={i}
+                  className="nox-surface rounded-xl border border-border overflow-hidden cursor-pointer nox-hover-glow group"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => setSelectedImage(img)}
                 >
-                  MyVouch.es →
-                </a>
-              )}
-              {settings.discordInvite && (
-                <a
-                  href={settings.discordInvite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
-                >
-                  Discord →
-                </a>
-              )}
+                  <img
+                    src={img}
+                    alt={`Feedback ${i + 1}`}
+                    className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </motion.div>
+              ))}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
+
+        {/* Vouch Platforms */}
+        {platforms.length > 0 && (
+          <motion.div
+            className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
+                <p className="text-sm text-muted-foreground max-w-md">
+                  Check our platforms to see all our verified vouches and reviews.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                {platforms.map((platform, i) => (
+                  <a
+                    key={i}
+                    href={platform.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    {platform.name} →
+                  </a>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedImage(null)}
+          >
+            <motion.div
+              className="relative max-w-3xl w-full"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute -top-10 right-0 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <img
+                src={selectedImage}
+                alt="Feedback"
+                className="w-full rounded-2xl border border-border shadow-2xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };

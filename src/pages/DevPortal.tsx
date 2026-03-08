@@ -203,15 +203,9 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             )}
 
             {tab === 'settings' && (
-              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 max-w-md">
+              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6 max-w-2xl">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Settings</h2>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-1 block">MyVouch.es URL</label>
-                  <Input value={settings.vouchUrl}
-                    onChange={(e) => { const s = { ...settings, vouchUrl: e.target.value }; setSettingsState(s); saveSettings(s); }}
-                    placeholder="https://myvouch.es/thenox"
-                    className="bg-card border-border text-foreground placeholder:text-muted-foreground" />
-                </div>
+                
                 <div>
                   <label className="text-sm text-muted-foreground mb-1 block">Discord Invite Link</label>
                   <Input value={settings.discordInvite}
@@ -219,6 +213,93 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
                     placeholder="https://discord.gg/thenox"
                     className="bg-card border-border text-foreground placeholder:text-muted-foreground" />
                 </div>
+
+                {/* Vouch Platforms */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Vouch Platforms (shown on homepage)</label>
+                  <div className="space-y-2">
+                    {(settings.vouchPlatforms || []).map((platform, i) => (
+                      <div key={i} className="flex gap-2">
+                        <Input
+                          value={platform.name}
+                          onChange={(e) => {
+                            const platforms = [...(settings.vouchPlatforms || [])];
+                            platforms[i] = { ...platforms[i], name: e.target.value };
+                            const s = { ...settings, vouchPlatforms: platforms };
+                            setSettingsState(s); saveSettings(s);
+                          }}
+                          placeholder="Platform name (e.g. Sellauth)"
+                          className="bg-card border-border text-foreground placeholder:text-muted-foreground w-1/3"
+                        />
+                        <Input
+                          value={platform.url}
+                          onChange={(e) => {
+                            const platforms = [...(settings.vouchPlatforms || [])];
+                            platforms[i] = { ...platforms[i], url: e.target.value };
+                            const s = { ...settings, vouchPlatforms: platforms };
+                            setSettingsState(s); saveSettings(s);
+                          }}
+                          placeholder="https://..."
+                          className="bg-card border-border text-foreground placeholder:text-muted-foreground flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          const platforms = (settings.vouchPlatforms || []).filter((_, idx) => idx !== i);
+                          const s = { ...settings, vouchPlatforms: platforms };
+                          setSettingsState(s); saveSettings(s);
+                        }}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="noxOutline" size="sm" onClick={() => {
+                      const platforms = [...(settings.vouchPlatforms || []), { name: '', url: '' }];
+                      const s = { ...settings, vouchPlatforms: platforms };
+                      setSettingsState(s); saveSettings(s);
+                    }}>
+                      <Plus className="w-4 h-4 mr-1" /> Add Platform
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Feedback Images */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Feedback Images (URLs, shown on homepage)</label>
+                  <div className="space-y-2">
+                    {(settings.feedbackImages || []).map((url, i) => (
+                      <div key={i} className="flex gap-2 items-center">
+                        {url && (
+                          <img src={url} alt="" className="w-10 h-10 rounded object-cover border border-border flex-shrink-0" />
+                        )}
+                        <Input
+                          value={url}
+                          onChange={(e) => {
+                            const imgs = [...(settings.feedbackImages || [])];
+                            imgs[i] = e.target.value;
+                            const s = { ...settings, feedbackImages: imgs };
+                            setSettingsState(s); saveSettings(s);
+                          }}
+                          placeholder="https://... (image URL)"
+                          className="bg-card border-border text-foreground placeholder:text-muted-foreground flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          const imgs = (settings.feedbackImages || []).filter((_, idx) => idx !== i);
+                          const s = { ...settings, feedbackImages: imgs };
+                          setSettingsState(s); saveSettings(s);
+                        }}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="noxOutline" size="sm" onClick={() => {
+                      const imgs = [...(settings.feedbackImages || []), ''];
+                      const s = { ...settings, feedbackImages: imgs };
+                      setSettingsState(s); saveSettings(s);
+                    }}>
+                      <Plus className="w-4 h-4 mr-1" /> Add Image
+                    </Button>
+                  </div>
+                </div>
+
                 <p className="text-xs text-muted-foreground mt-4">
                   Discord Bot Token und Guild ID sind sicher als Backend-Secrets gespeichert.
                 </p>
