@@ -37,7 +37,7 @@ const TrustSection = () => {
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              className="nox-surface rounded-2xl border border-border p-6"
+              className="nox-surface rounded-2xl border border-border p-6 nox-hover-glow"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -51,7 +51,7 @@ const TrustSection = () => {
         </div>
 
         <motion.div
-          className="nox-surface rounded-2xl border border-border p-6 inline-block"
+          className="nox-surface rounded-2xl border border-border p-6 inline-block nox-hover-glow"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}

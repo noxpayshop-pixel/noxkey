@@ -102,7 +102,7 @@ const KeyRedeemPanel = () => {
       )}
 
       <motion.div
-        className="nox-surface rounded-2xl border border-border p-8 nox-glow"
+        className="nox-surface rounded-2xl border border-border p-8 nox-glow nox-hover-glow"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}

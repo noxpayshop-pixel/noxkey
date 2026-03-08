@@ -24,11 +24,11 @@ const HeroSection = () => {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         />
-        <h1 className="text-5xl md:text-7xl font-extrabold mb-4 tracking-tight">
+        <h1 className="text-5xl md:text-7xl font-extrabold mb-2 tracking-tight">
           <span className="nox-gradient-text">The Nox</span>
         </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-md text-center mb-2">
-          Premium Digital Delivery — Fast, Secure, Reliable.
+        <p className="text-lg md:text-xl text-muted-foreground mb-4">
+          We Care About <span className="nox-gradient-text font-extrabold uppercase">YOU</span>
         </p>
         <p className="text-sm text-muted-foreground/60">
           Enter your key below to claim your deliverables instantly.
