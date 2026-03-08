@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
