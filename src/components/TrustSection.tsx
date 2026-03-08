@@ -80,7 +80,7 @@ const TrustSection = () => {
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
           >
-            <p className="text-xs font-semibold text-primary uppercase tracking-[0.3em] mb-6">Customer Feedback</p>
+            <p className="text-xs font-semibold text-primary uppercase tracking-[0.3em] mb-6">Let Our Customers Talk</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {images.map((img, i) => (
                 <motion.div
