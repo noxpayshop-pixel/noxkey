@@ -8,7 +8,7 @@ import { getSettings } from '@/lib/store';
 import { Link } from 'react-router-dom';
 import {
   Loader2, Coins, ArrowLeft, LogOut, TrendingUp, TrendingDown,
-  Flame, Trophy, Dices, Target, Zap, Droplets, Bird,
+  Flame, Trophy, Dices, Target, Zap, Bird,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -20,8 +20,8 @@ import CrashGame from '@/components/casino/CrashGame';
 import TowersGame from '@/components/casino/TowersGame';
 import BlackjackGame from '@/components/casino/BlackjackGame';
 import LimboGame from '@/components/casino/LimboGame';
-import SplatGame from '@/components/casino/SplatGame';
 import ChickenRoadGame from '@/components/casino/ChickenRoadGame';
+import WheelGame from '@/components/casino/WheelGame';
 
 interface GameDef {
   id: string;
@@ -40,10 +40,8 @@ const ALL_GAMES: GameDef[] = [
   { id: 'towers', name: 'Towers', description: 'Climb the tower for multipliers.', icon: <Zap className="w-5 h-5" />, color: 'text-blue-400', gradient: 'from-blue-500/20 to-indigo-500/10' },
   { id: 'blackjack', name: 'Blackjack', description: 'Classic 21. Hit or Stand?', icon: <Dices className="w-5 h-5" />, color: 'text-purple-400', gradient: 'from-purple-500/20 to-violet-500/10' },
   { id: 'limbo', name: 'Limbo', description: 'Predict the multiplier.', icon: <Flame className="w-5 h-5" />, color: 'text-orange-400', gradient: 'from-orange-500/20 to-amber-500/10' },
-  { id: 'splat', name: 'Splat', description: 'Pick a color, watch the splat!', icon: <Droplets className="w-5 h-5" />, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
+  { id: 'wheel', name: 'Lucky Wheel', description: 'Spin to win up to 5x!', icon: <span className="text-lg">🎡</span>, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
 ];
-
-// All games now use deduct-first flow with rigged house edge
 
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
@@ -62,7 +60,7 @@ const Casino = () => {
     setLoading(true);
     const [pointsRes, activity, userStats] = await Promise.all([
       supabase.from('user_points').select('points').eq('discord_username', discordUsername).single(),
-      getRecentActivity(15),
+      getRecentActivity(discordUsername, 15),
       getUserStats(discordUsername),
     ]);
     setPoints(pointsRes.data?.points ?? 0);
@@ -76,19 +74,18 @@ const Casino = () => {
   useEffect(() => { if (isLoggedIn) fetchData(); }, [isLoggedIn, fetchData]);
 
   useEffect(() => {
+    if (!discordUsername) return;
     const channel = supabase
       .channel('casino-activity')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'casino_bets' }, () => {
-        getRecentActivity(15).then(setRecentActivity);
+        getRecentActivity(discordUsername, 15).then(setRecentActivity);
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [discordUsername]);
 
-  // Reset session history when switching games
   useEffect(() => { setSessionHistory([]); }, [selectedGame]);
 
-  // Deduct-first handler (all games use this now)
   const handleDeduct = async () => {
     if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
     const res = await deductBet(discordUsername, betAmount, points);
@@ -119,7 +116,7 @@ const Casino = () => {
       case 'towers': return <TowersGame {...props} />;
       case 'blackjack': return <BlackjackGame {...props} />;
       case 'limbo': return <LimboGame {...props} />;
-      case 'splat': return <SplatGame {...props} />;
+      case 'wheel': return <WheelGame {...props} />;
       default: return null;
     }
   };
@@ -243,7 +240,7 @@ const Casino = () => {
               </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Activity - only own bets */}
             <div className="space-y-4">
               <div className="nox-surface rounded-2xl border border-border p-5">
                 <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
@@ -251,7 +248,7 @@ const Casino = () => {
                 </h3>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
                   {recentActivity.length === 0 && (
-                    <p className="text-muted-foreground text-sm text-center py-8">No bets yet. Be the first!</p>
+                    <p className="text-muted-foreground text-sm text-center py-8">No bets yet</p>
                   )}
                   {recentActivity.map((bet, i) => (
                     <motion.div key={bet.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
@@ -260,11 +257,13 @@ const Casino = () => {
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                         bet.won ? 'bg-green-500/10' : 'bg-destructive/10'
                       }`}>
-                        {bet.won ? <Trophy className="w-4 h-4 text-green-400" /> : <TrendingDown className="w-4 h-4 text-destructive" />}
+                        {bet.won ? <TrendingDown className="w-4 h-4 text-green-400" /> : <TrendingUp className="w-4 h-4 text-destructive" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground capitalize">{bet.game}</p>
-                        <p className="text-xs text-muted-foreground">@{bet.discord_username}</p>
+                        <p className="text-sm font-medium text-foreground">{bet.won ? 'Win' : 'Bet'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(bet.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       <span className={`text-sm font-bold ${bet.won ? 'text-green-400' : 'text-destructive'}`}>
                         {bet.won ? `+${bet.payout - bet.bet_amount}` : `-${bet.bet_amount}`}

@@ -228,10 +228,11 @@ export async function getRiggedOutcome({
   return { shouldWin: roll < chance, adjustedWinChance: chance };
 }
 
-export async function getRecentActivity(limit = 20): Promise<any[]> {
+export async function getRecentActivity(discordUsername: string, limit = 20): Promise<any[]> {
   const { data } = await supabase
     .from('casino_bets')
     .select('*')
+    .eq('discord_username', discordUsername)
     .order('created_at', { ascending: false })
     .limit(limit);
   return data ?? [];
