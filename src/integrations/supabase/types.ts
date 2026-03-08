@@ -35,6 +35,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gift_items: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          point_price: number
+          stock: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          point_price?: number
+          stock?: string[]
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          point_price?: number
+          stock?: string[]
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
@@ -62,23 +89,53 @@ export type Database = {
         }
         Relationships: []
       }
+      point_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          discord_username: string
+          id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          discord_username: string
+          id?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          discord_username?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           created_at: string | null
           description: string | null
           id: string
+          max_bonus_points: number | null
           name: string
         }
         Insert: {
           created_at?: string | null
           description?: string | null
           id?: string
+          max_bonus_points?: number | null
           name: string
         }
         Update: {
           created_at?: string | null
           description?: string | null
           id?: string
+          max_bonus_points?: number | null
           name?: string
         }
         Relationships: []
@@ -234,6 +291,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_points: {
+        Row: {
+          discord_username: string
+          id: string
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          discord_username: string
+          id?: string
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          discord_username?: string
+          id?: string
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vouch_submissions: {
+        Row: {
+          admin_note: string | null
+          created_at: string | null
+          discord_username: string
+          id: string
+          platform: string
+          resolved_at: string | null
+          screenshot_url: string
+          status: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string | null
+          discord_username: string
+          id?: string
+          platform: string
+          resolved_at?: string | null
+          screenshot_url: string
+          status?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string | null
+          discord_username?: string
+          id?: string
+          platform?: string
+          resolved_at?: string | null
+          screenshot_url?: string
+          status?: string
+        }
+        Relationships: []
       }
       waitlist: {
         Row: {

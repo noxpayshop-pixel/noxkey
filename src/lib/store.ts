@@ -156,11 +156,11 @@ export async function redeemCode(
   code: string,
   email: string,
   discord: string
-): Promise<{ success: boolean; item?: string; productName?: string; description?: string; outOfStock?: boolean }> {
+): Promise<{ success: boolean; item?: string; productName?: string; description?: string; outOfStock?: boolean; bonusPoints?: number }> {
   // Find the code
   const { data: codeRow } = await supabase
     .from('redeem_codes')
-    .select('*, products(id, name, description)')
+    .select('*, products(id, name, description, max_bonus_points)')
     .eq('code', code)
     .eq('is_redeemed', false)
     .single();
@@ -173,6 +173,24 @@ export async function redeemCode(
   // Mark code as redeemed
   await supabase.from('redeem_codes').update({ is_redeemed: true }).eq('id', codeRow.id);
 
+  // Random bonus points
+  const maxBonus = product.max_bonus_points ?? 5;
+  const bonusPoints = Math.floor(Math.random() * (maxBonus + 1));
+
+  if (bonusPoints > 0) {
+    // Upsert user points
+    const { data: existing } = await supabase.from('user_points').select('points').eq('discord_username', discord).single();
+    if (existing) {
+      await supabase.from('user_points').update({ points: existing.points + bonusPoints, updated_at: new Date().toISOString() }).eq('discord_username', discord);
+    } else {
+      await supabase.from('user_points').insert({ discord_username: discord, points: bonusPoints });
+    }
+    await supabase.from('point_transactions').insert({
+      discord_username: discord, amount: bonusPoints, type: 'redeem_bonus',
+      description: `Bonus from redeeming ${product.name}`,
+    });
+  }
+
   // Try to get a stock item
   const { data: stockItem } = await supabase
     .from('stock_items')
@@ -184,12 +202,12 @@ export async function redeemCode(
     .single();
 
   if (!stockItem) {
-    // Out of stock — add to waitlist
+    // Out of stock — add to waitlist + mention free gift
     await supabase.from('waitlist').insert({ product_id: productId, email, discord });
     await supabase.from('redemptions').insert({
       product_id: productId, code, email, discord, delivered_item: null,
     });
-    return { success: false, outOfStock: true, productName: product.name };
+    return { success: false, outOfStock: true, productName: product.name, bonusPoints };
   }
 
   // Claim stock item
@@ -200,7 +218,7 @@ export async function redeemCode(
     product_id: productId, code, email, discord, delivered_item: stockItem.item,
   });
 
-  return { success: true, item: stockItem.item, productName: product.name, description: product.description };
+  return { success: true, item: stockItem.item, productName: product.name, description: product.description, bonusPoints };
 }
 
 // ---- Claims / Waitlist ----
