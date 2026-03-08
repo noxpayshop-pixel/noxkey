@@ -20,6 +20,7 @@ const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
 export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
   const { discordUsername } = useDiscordAuth();
+  const MINE_OPTIONS = [5, 7, 10, 13, 15];
   const [mineCount, setMineCount] = useState(5);
   const [gameActive, setGameActive] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -87,7 +88,14 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
 
     const safeTiles = TOTAL_TILES - mineCount;
     const revealedCount = newRevealed.size;
-    const mult = parseFloat(((safeTiles / (safeTiles - revealedCount + 1)) * (1 + revealedCount * 0.15)).toFixed(2));
+    // House-edge multiplier: based on true odds * 0.90 (10% house edge)
+    // True fair mult per tile = TOTAL_TILES / safeTiles compounded
+    // We use: product of (remaining / safe_remaining) with 0.90 cut
+    let mult = 1.0;
+    for (let i = 0; i < revealedCount; i++) {
+      mult *= (TOTAL_TILES - i) / (safeTiles - i) * 0.90;
+    }
+    mult = parseFloat(Math.max(1.0, mult).toFixed(2));
     setCurrentMult(mult);
     setPayout(Math.floor(lockedBet * mult));
 
@@ -108,7 +116,11 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
   const nextTileMult = () => {
     const safeTiles = TOTAL_TILES - mineCount;
     const revealedCount = revealed.size + 1;
-    return ((safeTiles / (safeTiles - revealedCount + 1)) * (1 + revealedCount * 0.15)).toFixed(2);
+    let mult = 1.0;
+    for (let i = 0; i < revealedCount; i++) {
+      mult *= (TOTAL_TILES - i) / (safeTiles - i) * 0.90;
+    }
+    return Math.max(1.0, mult).toFixed(2);
   };
 
   const presets = [1, 5, 10, 25, 50];
@@ -204,12 +216,15 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-muted-foreground uppercase tracking-widest">Mines</label>
-                  <span className="text-sm font-bold text-foreground">{mineCount}</span>
+                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Mines</label>
+                <div className="flex gap-1.5">
+                  {MINE_OPTIONS.map(m => (
+                    <button key={m} onClick={() => setMineCount(m)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
+                        mineCount === m ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'
+                      }`}>{m}</button>
+                  ))}
                 </div>
-                <input type="range" min={1} max={20} value={mineCount} onChange={(e) => setMineCount(parseInt(e.target.value))}
-                  className="w-full accent-primary" />
               </div>
 
               <Button variant="nox" className="w-full h-14 text-lg font-bold"
