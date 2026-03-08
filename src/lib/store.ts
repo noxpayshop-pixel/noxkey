@@ -282,7 +282,7 @@ export interface NoxSettings {
   enabledCasinoGames: string[];
 }
 
-const ALL_CASINO_GAMES = ['coinflip', 'crash', 'mines', 'towers', 'blackjack', 'limbo', 'splat'];
+const ALL_CASINO_GAMES = ['coinflip', 'crash', 'mines', 'chicken', 'towers', 'blackjack', 'limbo', 'splat'];
 
 const defaultSettings: NoxSettings = {
   vouchUrl: '',
