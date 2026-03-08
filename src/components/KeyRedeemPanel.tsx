@@ -24,6 +24,7 @@ const KeyRedeemPanel = () => {
     productName?: string;
     description?: string;
     outOfStock?: boolean;
+    bonusPoints?: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
