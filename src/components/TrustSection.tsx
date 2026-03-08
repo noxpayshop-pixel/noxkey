@@ -81,11 +81,11 @@ const TrustSection = () => {
             transition={{ delay: 0.2 }}
           >
             <p className="text-xs font-semibold text-primary uppercase tracking-[0.3em] mb-6">Let Our Customers Talk</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="flex flex-wrap gap-3">
               {images.map((img, i) => (
                 <motion.div
                   key={i}
-                  className="nox-surface rounded-xl border border-border overflow-hidden cursor-pointer nox-hover-glow group"
+                  className="rounded-xl border border-border overflow-hidden cursor-pointer nox-hover-glow group"
                   initial={{ opacity: 0, scale: 0.95 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
@@ -95,7 +95,7 @@ const TrustSection = () => {
                   <img
                     src={img}
                     alt={`Feedback ${i + 1}`}
-                    className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                    className="max-h-64 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                   />
                 </motion.div>
