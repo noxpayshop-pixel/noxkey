@@ -22,18 +22,35 @@ interface Segment {
   textColor: string;
 }
 
-const SEGMENTS: Segment[] = [
+// Bet 5: smaller rewards, better odds (5 zeros out of 12)
+const SEGMENTS_5: Segment[] = [
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '+3', amount: 3, color: 'hsl(var(--primary))', textColor: '#fff' },
-  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--primary))', textColor: '#fff' },
   { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '+8', amount: 8, color: '#22c55e', textColor: '#fff' },
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '+2', amount: 2, color: 'hsl(var(--accent))', textColor: '#fff' },
-  { label: '+15', amount: 15, color: '#eab308', textColor: '#000' },
-  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+4', amount: 4, color: '#22c55e', textColor: '#fff' },
   { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '+25', amount: 25, color: '#f59e0b', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+6', amount: 6, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '+10', amount: 10, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+];
+
+// Bet 10: bigger rewards, worse odds (7 zeros out of 12)
+const SEGMENTS_10: Segment[] = [
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+5', amount: 5, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+12', amount: 12, color: '#22c55e', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+20', amount: 20, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+8', amount: 8, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '+50', amount: 50, color: '#f59e0b', textColor: '#000' },
   { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
 ];
 
@@ -44,6 +61,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
   const [result, setResult] = useState<{ won: boolean; payout: number; amount: number } | null>(null);
   const [lockedBet, setLockedBet] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [activeSegments, setActiveSegments] = useState<Segment[]>(SEGMENTS_5);
 
   const BET_OPTIONS = [5, 10];
 
