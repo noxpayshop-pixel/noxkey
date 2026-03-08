@@ -1072,12 +1072,23 @@ function GiftsView() {
 }
 
 // ---- Casino Admin View ----
+const ALL_CASINO_GAMES = [
+  { id: 'coinflip', name: 'Coin Flip' },
+  { id: 'crash', name: 'Crash' },
+  { id: 'mines', name: 'Mines' },
+  { id: 'towers', name: 'Towers' },
+  { id: 'blackjack', name: 'Blackjack' },
+  { id: 'limbo', name: 'Limbo' },
+  { id: 'splat', name: 'Splat' },
+];
+
 function CasinoAdminView() {
   const [liveBets, setLiveBets] = useState<any[]>([]);
   const [users, setUsers] = useState<Array<{ discord_username: string; points: number; casino_chance_modifier: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [modifierInputs, setModifierInputs] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [enabledGames, setEnabledGames] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -1087,12 +1098,14 @@ function CasinoAdminView() {
     ]);
     setLiveBets(betsRes.data ?? []);
     setUsers(usersRes.data ?? []);
+    // Load enabled games from settings
+    const settings = getSettings();
+    setEnabledGames(settings.enabledCasinoGames || ALL_CASINO_GAMES.map(g => g.id));
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Realtime live bets
   useEffect(() => {
     const channel = supabase
       .channel('admin-casino-live')
@@ -1102,6 +1115,16 @@ function CasinoAdminView() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  const toggleGame = (gameId: string) => {
+    const newEnabled = enabledGames.includes(gameId)
+      ? enabledGames.filter(g => g !== gameId)
+      : [...enabledGames, gameId];
+    setEnabledGames(newEnabled);
+    const settings = getSettings();
+    saveSettings({ ...settings, enabledCasinoGames: newEnabled });
+    toast.success(`Game ${enabledGames.includes(gameId) ? 'disabled' : 'enabled'}`);
+  };
 
   const updateModifier = async (username: string) => {
     const val = parseFloat(modifierInputs[username] ?? '0');
@@ -1117,7 +1140,6 @@ function CasinoAdminView() {
     ? users.filter(u => u.discord_username.toLowerCase().includes(searchQuery.toLowerCase()))
     : users;
 
-  // Calculate totals
   const totalWagered = liveBets.reduce((s, b) => s + b.bet_amount, 0);
   const totalPaidOut = liveBets.reduce((s, b) => s + (b.won ? b.payout : 0), 0);
   const houseProfit = totalWagered - totalPaidOut;
@@ -1127,6 +1149,27 @@ function CasinoAdminView() {
       <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
         <Coins className="w-5 h-5 text-primary" /> Casino Management
       </h2>
+
+      {/* Game Enable/Disable */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Games (Enable / Disable)</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {ALL_CASINO_GAMES.map(g => {
+            const enabled = enabledGames.includes(g.id);
+            return (
+              <button key={g.id} onClick={() => toggleGame(g.id)}
+                className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+                  enabled
+                    ? 'border-green-500/40 bg-green-500/10 text-green-400'
+                    : 'border-border bg-card text-muted-foreground'
+                }`}>
+                <span className="mr-2">{enabled ? '✅' : '❌'}</span>
+                {g.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* House stats */}
       <div className="grid grid-cols-3 gap-3">
@@ -1180,7 +1223,7 @@ function CasinoAdminView() {
       <div>
         <h3 className="text-sm font-semibold text-foreground mb-3">User Chance Modifiers</h3>
         <p className="text-xs text-muted-foreground mb-3">
-          Adjust win chances per user. Positive = more wins, Negative = more losses. Value is % modifier (e.g. +10 = +10% win chance).
+          Adjust win chances per user. Positive = more wins, Negative = more losses. Value is % modifier.
         </p>
         <Input
           value={searchQuery}
@@ -1194,7 +1237,7 @@ function CasinoAdminView() {
               <div className="flex-1">
                 <p className="text-foreground font-medium text-sm">@{u.discord_username}</p>
                 <p className="text-xs text-muted-foreground">
-                  {u.points} pts · Current modifier: <span className={u.casino_chance_modifier > 0 ? 'text-green-400' : u.casino_chance_modifier < 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                  {u.points} pts · Modifier: <span className={u.casino_chance_modifier > 0 ? 'text-green-400' : u.casino_chance_modifier < 0 ? 'text-destructive' : 'text-muted-foreground'}>
                     {u.casino_chance_modifier > 0 ? '+' : ''}{u.casino_chance_modifier}%
                   </span>
                 </p>

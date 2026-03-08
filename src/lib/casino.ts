@@ -110,7 +110,7 @@ export async function placeBet(
   else if (game === 'mines') multiplier = 1.8;
   else if (game === 'towers') multiplier = 2.5;
   else if (game === 'limbo') multiplier = 1 + Math.random() * 4; // 1x-5x
-  else if (game === 'blackjack') multiplier = 2;
+  else if (game === 'splat') multiplier = 2 + Math.random() * 3; // 2x-5x
 
   const payout = won ? Math.floor(betAmount * multiplier) : 0;
   const newPoints = currentPoints - betAmount + payout;

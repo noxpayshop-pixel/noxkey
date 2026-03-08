@@ -1,0 +1,184 @@
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Coins, Zap, Skull } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+interface Props {
+  points: number;
+  betAmount: number;
+  setBetAmount: (n: number) => void;
+  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  playing: boolean;
+}
+
+const ROWS = 8;
+const COLS = 3;
+
+export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+  const [gameActive, setGameActive] = useState(false);
+  const [currentRow, setCurrentRow] = useState(0);
+  const [safeColumns, setSafeColumns] = useState<number[]>([]);
+  const [selected, setSelected] = useState<Array<number | null>>(Array(ROWS).fill(null));
+  const [hitTrap, setHitTrap] = useState(false);
+  const [cashedOut, setCashedOut] = useState(false);
+  const [currentMult, setCurrentMult] = useState(1.0);
+
+  const getMultiplier = (row: number) => parseFloat((1 + row * 0.5).toFixed(2));
+
+  const startGame = () => {
+    // Generate safe columns (1 safe per row)
+    const safes = Array.from({ length: ROWS }, () => Math.floor(Math.random() * COLS));
+    setSafeColumns(safes);
+    setCurrentRow(0);
+    setSelected(Array(ROWS).fill(null));
+    setHitTrap(false);
+    setCashedOut(false);
+    setCurrentMult(1.0);
+    setGameActive(true);
+  };
+
+  const handlePick = async (row: number, col: number) => {
+    if (!gameActive || row !== currentRow || hitTrap) return;
+
+    const newSelected = [...selected];
+    newSelected[row] = col;
+    setSelected(newSelected);
+
+    if (col !== safeColumns[row]) {
+      setHitTrap(true);
+      setGameActive(false);
+      await onPlay(); // loss
+      return;
+    }
+
+    const mult = getMultiplier(row + 1);
+    setCurrentMult(mult);
+    
+    if (row + 1 >= ROWS) {
+      setCashedOut(true);
+      setGameActive(false);
+      await onPlay(); // win - reached top
+    } else {
+      setCurrentRow(row + 1);
+    }
+  };
+
+  const handleCashout = async () => {
+    if (!gameActive || currentRow === 0) return;
+    setCashedOut(true);
+    setGameActive(false);
+    await onPlay();
+  };
+
+  const presets = [1, 5, 10, 25, 50];
+  const isGameOver = hitTrap || cashedOut;
+
+  return (
+    <div className="grid lg:grid-cols-[1fr_340px] gap-6">
+      {/* Tower Grid */}
+      <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center">
+        <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Towers</h2>
+        <p className="text-xs text-muted-foreground mb-6">Climb higher for bigger multipliers</p>
+
+        <div className="w-full max-w-[300px] space-y-2 flex flex-col-reverse">
+          {Array.from({ length: ROWS }, (_, row) => (
+            <div key={row} className="flex gap-2">
+              <div className="w-12 flex items-center justify-center text-xs font-bold text-muted-foreground">
+                {getMultiplier(row + 1)}x
+              </div>
+              {Array.from({ length: COLS }, (_, col) => {
+                const isSelected = selected[row] === col;
+                const isSafe = safeColumns[row] === col;
+                const showResult = isGameOver && row <= (hitTrap ? currentRow : currentRow - 1);
+                const isCurrentRow = row === currentRow && gameActive;
+
+                return (
+                  <motion.button
+                    key={col}
+                    whileHover={isCurrentRow ? { scale: 1.05 } : {}}
+                    onClick={() => handlePick(row, col)}
+                    disabled={!gameActive || row !== currentRow}
+                    className={`flex-1 h-14 rounded-xl flex items-center justify-center border transition-all ${
+                      isSelected && !isSafe ? 'bg-destructive/20 border-destructive' :
+                      isSelected && isSafe ? 'bg-green-500/10 border-green-500/30' :
+                      showResult && isSafe ? 'bg-green-500/5 border-green-500/20' :
+                      showResult && !isSafe ? 'bg-card border-border' :
+                      isCurrentRow ? 'bg-card border-primary/40 hover:bg-primary/5 cursor-pointer' :
+                      row < currentRow && selected[row] === col ? 'bg-green-500/10 border-green-500/30' :
+                      'bg-card border-border opacity-50'
+                    }`}
+                  >
+                    {isSelected && !isSafe && <Skull className="w-5 h-5 text-destructive" />}
+                    {isSelected && isSafe && <Zap className="w-5 h-5 text-green-400" />}
+                    {showResult && isSafe && !isSelected && <div className="w-2 h-2 rounded-full bg-green-500/30" />}
+                  </motion.button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {isGameOver && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-center">
+            {hitTrap ? (
+              <p className="text-xl font-black text-destructive">Wrong pick! 💀</p>
+            ) : (
+              <p className="text-xl font-black text-green-400">
+                {currentRow >= ROWS ? 'Reached the top!' : `Cashed out at ${currentMult}x!`} ✨
+              </p>
+            )}
+          </motion.div>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div className="space-y-4">
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
+          <p className="text-2xl font-black text-foreground flex items-center gap-2">
+            <Coins className="w-5 h-5 text-primary" /> {points}
+          </p>
+        </div>
+
+        <div className="nox-surface rounded-2xl border border-border p-5 space-y-4">
+          {!gameActive ? (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Bet Amount</label>
+                <input type="number" min={1} max={points} value={betAmount}
+                  onChange={(e) => setBetAmount(Math.max(1, Math.min(points, parseInt(e.target.value) || 1)))}
+                  className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground text-lg font-bold focus:outline-none focus:border-primary transition-colors" />
+                <div className="flex gap-1.5 mt-3">
+                  {presets.map(p => (
+                    <button key={p} onClick={() => setBetAmount(Math.min(p, points))}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all border ${
+                        betAmount === p ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'
+                      }`}>{p}</button>
+                  ))}
+                </div>
+              </div>
+              <Button variant="nox" className="w-full h-14 text-lg font-bold"
+                disabled={betAmount < 1 || betAmount > points || points === 0}
+                onClick={startGame}>
+                PLAY
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="bg-background rounded-xl border border-border p-4 text-center">
+                <p className="text-xs text-muted-foreground uppercase">Current Multiplier</p>
+                <p className="text-2xl font-black text-foreground">{currentMult}x</p>
+                <p className="text-xs text-muted-foreground mt-1">Next: {getMultiplier(currentRow + 1)}x</p>
+              </div>
+              <Button variant="nox" className="w-full h-14 text-lg font-bold"
+                disabled={currentRow === 0}
+                onClick={handleCashout}>
+                CASHOUT ({Math.floor(betAmount * currentMult)})
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
