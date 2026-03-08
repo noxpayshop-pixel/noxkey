@@ -133,29 +133,33 @@ const Casino = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Animated background orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-1/4 w-[600px] h-[400px] rounded-full bg-primary/3 blur-[150px]" />
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[400px] rounded-full bg-accent/3 blur-[120px]" />
+        <div className="absolute -top-32 -right-32 w-[700px] h-[700px] rounded-full bg-primary/5 blur-[200px] animate-float" />
+        <div className="absolute -bottom-48 -left-32 w-[600px] h-[500px] rounded-full bg-accent/5 blur-[180px]" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/3 blur-[250px]" />
+        <div className="nox-grid-pattern absolute inset-0 opacity-30" />
       </div>
 
-      <div className="relative z-10 border-b border-border glass">
+      {/* Header */}
+      <div className="relative z-10 border-b border-border glass-strong">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="The Nox" className="w-9 h-9 group-hover:scale-110 transition-transform" />
-            <span className="text-lg font-bold nox-gradient-text">Casino</span>
+            <span className="text-xl font-black nox-gradient-text tracking-tight">Casino</span>
           </Link>
           {isLoggedIn && (
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 nox-gradient rounded-full px-4 py-1.5">
+              <div className="flex items-center gap-2 nox-gradient rounded-full px-5 py-2 nox-glow-sm">
                 <Coins className="w-4 h-4 text-primary-foreground" />
-                <span className="text-sm text-primary-foreground font-bold">{points}</span>
+                <span className="text-sm text-primary-foreground font-black tracking-wide">{points.toLocaleString()}</span>
               </div>
-              <div className="flex items-center gap-2 bg-card/50 rounded-full px-3 py-1.5 border border-border">
+              <div className="flex items-center gap-2 glass rounded-full px-4 py-2 border border-border">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-sm text-foreground font-medium">@{discordUsername}</span>
               </div>
-              <Button variant="ghost" size="icon" className="rounded-full" onClick={logout}>
+              <Button variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10" onClick={logout}>
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>
@@ -165,14 +169,15 @@ const Casino = () => {
 
       <div className="relative z-10 max-w-7xl mx-auto p-6">
         {!isLoggedIn ? (
-          <div className="mt-16 max-w-lg mx-auto">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-2xl nox-gradient flex items-center justify-center mx-auto mb-4">
-                <Dices className="w-8 h-8 text-primary-foreground" />
+          <div className="mt-20 max-w-lg mx-auto">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+              className="text-center mb-10">
+              <div className="w-20 h-20 rounded-3xl nox-gradient flex items-center justify-center mx-auto mb-6 nox-glow animate-pulse-glow">
+                <Dices className="w-10 h-10 text-primary-foreground" />
               </div>
-              <h1 className="text-3xl font-extrabold text-foreground mb-2">Nox Casino</h1>
-              <p className="text-muted-foreground">Login with Discord to play and bet your points.</p>
-            </div>
+              <h1 className="text-4xl font-black text-foreground mb-3">Nox Casino</h1>
+              <p className="text-muted-foreground text-lg">Login with Discord to play and bet your points.</p>
+            </motion.div>
             <DiscordLoginPanel />
           </div>
         ) : loading ? (
@@ -181,12 +186,12 @@ const Casino = () => {
           </div>
         ) : selectedGame ? (
           <div>
-            <Button variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="mb-4">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="mb-4 hover:bg-card">
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to Games
             </Button>
             {stats && stats.currentStreak >= 2 && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                className="mb-6 nox-gradient rounded-2xl p-4 flex items-center gap-3">
+                className="mb-6 nox-gradient rounded-2xl p-4 flex items-center gap-3 nox-glow-sm">
                 <Flame className="w-6 h-6 text-primary-foreground animate-pulse" />
                 <div>
                   <p className="text-primary-foreground font-bold text-lg">🔥 {stats.currentStreak} Win Streak!</p>
@@ -197,88 +202,147 @@ const Casino = () => {
             {renderGame()}
           </div>
         ) : (
-          <div className="grid lg:grid-cols-[1fr_320px] gap-6">
-            <div>
-              {stats && stats.currentStreak >= 2 && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-                  className="mb-6 nox-gradient rounded-2xl p-4 flex items-center gap-3">
-                  <Flame className="w-6 h-6 text-primary-foreground animate-pulse" />
-                  <div>
-                    <p className="text-primary-foreground font-bold text-lg">🔥 {stats.currentStreak} Win Streak!</p>
-                    <p className="text-primary-foreground/70 text-xs">Max streak: {stats.maxStreak}</p>
-                  </div>
-                </motion.div>
-              )}
-
-              <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <Dices className="w-5 h-5 text-primary" /> Featured Games
-              </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {GAMES.map((game, i) => (
-                  <motion.div
-                    key={game.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="nox-surface rounded-2xl border border-border overflow-hidden cursor-pointer nox-hover-glow group"
-                    onClick={() => setSelectedGame(game.id)}
-                  >
-                    <div className={`h-28 bg-gradient-to-br ${game.gradient} relative flex items-center justify-center`}>
-                      <div className={`w-12 h-12 rounded-xl bg-background/50 backdrop-blur flex items-center justify-center ${game.color}`}>
-                        {game.icon}
-                      </div>
-                      <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                        Live
-                      </span>
+          <div className="space-y-8">
+            {/* Stats banner */}
+            {stats && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Total Bets', value: stats.totalBets, icon: <Dices className="w-4 h-4" /> },
+                  { label: 'Wins', value: stats.wins, icon: <Trophy className="w-4 h-4" /> },
+                  { label: 'Win Rate', value: stats.totalBets > 0 ? `${Math.round((stats.wins / stats.totalBets) * 100)}%` : '—', icon: <TrendingUp className="w-4 h-4" /> },
+                  { label: 'Best Streak', value: stats.maxStreak, icon: <Flame className="w-4 h-4" /> },
+                ].map((stat, i) => (
+                  <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    className="nox-surface nox-card-shine rounded-xl border border-border p-4 text-center">
+                    <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
+                      {stat.icon}
+                      <span className="text-[10px] uppercase tracking-widest font-bold">{stat.label}</span>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground">{game.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-1">{game.description}</p>
-                      <p className="text-xs text-primary font-semibold mt-2 group-hover:text-accent transition-colors">
-                        PLAY NOW →
-                      </p>
-                    </div>
+                    <p className="text-xl font-black text-foreground">{stat.value}</p>
                   </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            )}
 
-            {/* Recent Activity - only own bets */}
-            <div className="space-y-4">
-              <div className="nox-surface rounded-2xl border border-border p-5">
-                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" /> Recent Activity
-                </h3>
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
-                  {recentActivity.length === 0 && (
-                    <p className="text-muted-foreground text-sm text-center py-8">No bets yet</p>
-                  )}
-                  {recentActivity.map((bet, i) => (
-                    <motion.div key={bet.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="flex items-center gap-3 p-3 rounded-xl bg-background border border-border">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        bet.won ? 'bg-green-500/10' : 'bg-destructive/10'
-                      }`}>
-                        {bet.won ? <TrendingDown className="w-4 h-4 text-green-400" /> : <TrendingUp className="w-4 h-4 text-destructive" />}
+            {/* Streak banner */}
+            {stats && stats.currentStreak >= 2 && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                className="nox-gradient rounded-2xl p-5 flex items-center gap-4 nox-glow">
+                <div className="w-12 h-12 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
+                  <Flame className="w-7 h-7 text-primary-foreground animate-pulse" />
+                </div>
+                <div>
+                  <p className="text-primary-foreground font-black text-xl">🔥 {stats.currentStreak} Win Streak!</p>
+                  <p className="text-primary-foreground/60 text-sm">Max streak: {stats.maxStreak}</p>
+                </div>
+              </motion.div>
+            )}
+
+            <div className="grid lg:grid-cols-[1fr_340px] gap-8">
+              <div>
+                <h2 className="text-2xl font-black text-foreground mb-6 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg nox-gradient flex items-center justify-center">
+                    <Dices className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  Featured Games
+                </h2>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {GAMES.map((game, i) => (
+                    <motion.div
+                      key={game.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.06, type: 'spring', stiffness: 200 }}
+                      whileHover={{ y: -6, transition: { duration: 0.2 } }}
+                      className="nox-surface nox-card-shine rounded-2xl border border-border overflow-hidden cursor-pointer group relative"
+                      onClick={() => setSelectedGame(game.id)}
+                    >
+                      {/* Shimmer overlay on hover */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+                        <div className="absolute inset-0 animate-shimmer" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground">{bet.won ? 'Win' : 'Bet'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(bet.created_at).toLocaleDateString()}
-                        </p>
+
+                      <div className={`h-32 bg-gradient-to-br ${game.gradient} relative flex items-center justify-center overflow-hidden`}>
+                        <div className="absolute inset-0 bg-gradient-to-t from-card/80 to-transparent" />
+                        <motion.div
+                          whileHover={{ scale: 1.15, rotate: 5 }}
+                          className={`relative z-10 w-14 h-14 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/50 flex items-center justify-center ${game.color} shadow-lg`}
+                        >
+                          {game.icon}
+                        </motion.div>
+                        <span className="absolute top-3 right-3 z-10 text-[9px] font-black uppercase tracking-wider bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full border border-green-500/20 backdrop-blur-sm">
+                          ● Live
+                        </span>
                       </div>
-                      <span className={`text-sm font-bold ${bet.won ? 'text-green-400' : 'text-destructive'}`}>
-                        {bet.won ? `+${bet.payout - bet.bet_amount}` : `-${bet.bet_amount}`}
-                      </span>
+                      <div className="p-5 relative z-10">
+                        <h3 className="font-black text-foreground text-base">{game.name}</h3>
+                        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{game.description}</p>
+                        <div className="flex items-center gap-1.5 mt-3">
+                          <span className="text-xs text-primary font-bold group-hover:text-accent transition-colors">
+                            PLAY NOW
+                          </span>
+                          <motion.span
+                            className="text-primary group-hover:text-accent transition-colors"
+                            animate={{ x: [0, 4, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            →
+                          </motion.span>
+                        </div>
+                      </div>
+
+                      {/* Bottom glow on hover */}
+                      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </motion.div>
                   ))}
                 </div>
               </div>
-              <div className="nox-surface rounded-2xl border border-border p-5">
-                <Link to="/mypoints" className="flex items-center gap-2 text-sm text-primary hover:text-accent transition-colors">
-                  <Coins className="w-4 h-4" /> Need more points? Earn them here →
-                </Link>
+
+              {/* Recent Activity */}
+              <div className="space-y-4">
+                <div className="nox-surface nox-card-shine rounded-2xl border border-border p-5">
+                  <h3 className="font-black text-foreground mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <TrendingUp className="w-4 h-4 text-primary" /> Recent Activity
+                  </h3>
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {recentActivity.length === 0 && (
+                      <div className="text-center py-10">
+                        <div className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center mx-auto mb-3">
+                          <Dices className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground text-sm">No bets yet</p>
+                        <p className="text-muted-foreground/50 text-xs mt-1">Play a game to see your history</p>
+                      </div>
+                    )}
+                    {recentActivity.map((bet, i) => (
+                      <motion.div key={bet.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/50 hover:border-border transition-colors">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                          bet.won ? 'bg-green-500/10 border border-green-500/20' : 'bg-destructive/10 border border-destructive/20'
+                        }`}>
+                          {bet.won ? <TrendingDown className="w-4 h-4 text-green-400" /> : <TrendingUp className="w-4 h-4 text-destructive" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-foreground">{bet.won ? 'Win' : 'Bet'}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {new Date(bet.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`text-sm font-black ${bet.won ? 'text-green-400' : 'text-destructive'}`}>
+                          {bet.won ? `+${bet.payout - bet.bet_amount}` : `-${bet.bet_amount}`}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                <motion.div whileHover={{ scale: 1.02 }} className="nox-surface nox-card-shine rounded-2xl border border-border p-5 nox-hover-glow">
+                  <Link to="/mypoints" className="flex items-center gap-2 text-sm text-primary hover:text-accent transition-colors font-bold">
+                    <Coins className="w-4 h-4" /> Need more points? Earn them here →
+                  </Link>
+                </motion.div>
               </div>
             </div>
           </div>
