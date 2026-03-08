@@ -43,8 +43,7 @@ const ALL_GAMES: GameDef[] = [
   { id: 'splat', name: 'Splat', description: 'Pick a color, watch the splat!', icon: <Droplets className="w-5 h-5" />, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
 ];
 
-// Games that use deduct-first flow (player-driven outcomes)
-const DEDUCT_FIRST_GAMES = ['mines', 'chicken', 'crash'];
+// All games now use deduct-first flow with rigged house edge
 
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
