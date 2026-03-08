@@ -56,7 +56,7 @@ function CardDisplay({ card, hidden }: { card: Card; hidden?: boolean }) {
   );
 }
 
-export default function BlackjackGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function BlackjackGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'done'>('idle');
   const [playerCards, setPlayerCards] = useState<Card[]>([]);
   const [dealerCards, setDealerCards] = useState<Card[]>([]);

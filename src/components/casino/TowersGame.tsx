@@ -15,7 +15,7 @@ interface Props {
 const ROWS = 8;
 const COLS = 3;
 
-export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [gameActive, setGameActive] = useState(false);
   const [currentRow, setCurrentRow] = useState(0);
   const [safeColumns, setSafeColumns] = useState<number[]>([]);
