@@ -17,31 +17,31 @@ interface Props {
 
 interface Segment {
   label: string;
-  multiplier: number;
+  amount: number; // fixed point payout (0 = lose)
   color: string;
   textColor: string;
 }
 
 const SEGMENTS: Segment[] = [
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '1.5x', multiplier: 1.5, color: 'hsl(var(--primary))', textColor: '#fff' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '0.5x', multiplier: 0.5, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '2x', multiplier: 2, color: '#22c55e', textColor: '#fff' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '1x', multiplier: 1, color: 'hsl(var(--accent))', textColor: '#fff' },
-  { label: '3x', multiplier: 3, color: '#eab308', textColor: '#000' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '0.5x', multiplier: 0.5, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '5x', multiplier: 5, color: '#f59e0b', textColor: '#000' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+3', amount: 3, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
+  { label: '+8', amount: 8, color: '#22c55e', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '+15', amount: 15, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
+  { label: '+25', amount: 25, color: '#f59e0b', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
 ];
 
 export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
   const { discordUsername } = useDiscordAuth();
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [result, setResult] = useState<{ won: boolean; payout: number; multiplier: number } | null>(null);
+  const [result, setResult] = useState<{ won: boolean; payout: number; amount: number } | null>(null);
   const [lockedBet, setLockedBet] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -105,12 +105,10 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     if (discordUsername) {
       const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
       if (!shouldWin) {
-        // Land on 0x
-        const zeroIndices = SEGMENTS.map((s, i) => s.multiplier === 0 ? i : -1).filter(i => i >= 0);
+        const zeroIndices = SEGMENTS.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
         targetIdx = zeroIndices[Math.floor(Math.random() * zeroIndices.length)];
       } else {
-        // Land on a winning segment
-        const winIndices = SEGMENTS.map((s, i) => s.multiplier > 0 ? i : -1).filter(i => i >= 0);
+        const winIndices = SEGMENTS.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
         targetIdx = winIndices[Math.floor(Math.random() * winIndices.length)];
       }
     } else {
@@ -127,9 +125,9 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     await new Promise(r => setTimeout(r, 4000));
 
     const seg = SEGMENTS[targetIdx];
-    const payout = Math.floor(betAmount * seg.multiplier);
+    const payout = seg.amount;
     const won = payout > 0;
-    setResult({ won, payout, multiplier: seg.multiplier });
+    setResult({ won, payout, amount: seg.amount });
     setSpinning(false);
     await onComplete(won, payout);
   };
@@ -147,7 +145,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       {/* Game area */}
       <div className="nox-surface rounded-2xl border border-border p-8 flex flex-col items-center justify-center min-h-[600px]">
         <h2 className="text-lg font-black uppercase tracking-wider text-foreground mb-1">🎡 Lucky Wheel</h2>
-        <p className="text-xs text-muted-foreground mb-10">Spin to win up to 5x your bet!</p>
+        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +25 points!</p>
 
         <div className="relative">
           {/* Pointer */}
@@ -175,7 +173,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
         {result && !spinning && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-8 text-center">
             <p className={`text-2xl font-black ${result.won ? 'text-green-400' : 'text-destructive'}`}>
-              {result.multiplier === 0 ? 'BUST!' : `${result.multiplier}x — YOU WIN!`}
+              {result.amount === 0 ? 'BUST!' : `+${result.amount} POINTS!`}
             </p>
             <p className={`text-sm font-bold mt-1 ${result.won ? 'text-green-400' : 'text-destructive'}`}>
               {result.won ? `+${result.payout} points` : `-${lockedBet} points`}
