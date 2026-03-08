@@ -770,8 +770,23 @@ function AccountsView() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">@{selectedUser}</h3>
-            <p className="text-xs text-muted-foreground">{selectedAccount.claimCount} claims · {selectedAccount.requestCount} replacement requests</p>
+            <p className="text-xs text-muted-foreground">{selectedAccount.claimCount} claims · {selectedAccount.requestCount} requests · <span className="text-primary font-medium">{selectedAccount.points} pts</span></p>
           </div>
+        </div>
+
+        {/* Give Points */}
+        <div className="nox-surface rounded-xl border border-border p-4 flex items-center gap-3">
+          <Coins className="w-5 h-5 text-primary shrink-0" />
+          <Input
+            type="number"
+            value={givePointsAmount}
+            onChange={(e) => setGivePointsAmount(e.target.value)}
+            placeholder="Points (negative to remove)"
+            className="bg-background border-border text-foreground placeholder:text-muted-foreground flex-1"
+          />
+          <Button variant="nox" size="sm" onClick={() => handleGivePoints(selectedUser!, parseInt(givePointsAmount) || 0)} disabled={!givePointsAmount || parseInt(givePointsAmount) === 0}>
+            Give
+          </Button>
         </div>
 
         <div className="space-y-2">
