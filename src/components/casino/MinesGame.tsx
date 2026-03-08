@@ -116,7 +116,11 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
   const nextTileMult = () => {
     const safeTiles = TOTAL_TILES - mineCount;
     const revealedCount = revealed.size + 1;
-    return ((safeTiles / (safeTiles - revealedCount + 1)) * (1 + revealedCount * 0.15)).toFixed(2);
+    let mult = 1.0;
+    for (let i = 0; i < revealedCount; i++) {
+      mult *= (TOTAL_TILES - i) / (safeTiles - i) * 0.90;
+    }
+    return Math.max(1.0, mult).toFixed(2);
   };
 
   const presets = [1, 5, 10, 25, 50];
