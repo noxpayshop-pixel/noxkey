@@ -203,26 +203,17 @@ const Casino = () => {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Stats banner */}
+            {/* Total Won */}
             {stats && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: 'Total Bets', value: stats.totalBets, icon: <Dices className="w-4 h-4" /> },
-                  { label: 'Wins', value: stats.wins, icon: <Trophy className="w-4 h-4" /> },
-                  { label: 'Win Rate', value: stats.totalBets > 0 ? `${Math.round((stats.wins / stats.totalBets) * 100)}%` : '—', icon: <TrendingUp className="w-4 h-4" /> },
-                  { label: 'Best Streak', value: stats.maxStreak, icon: <Flame className="w-4 h-4" /> },
-                ].map((stat, i) => (
-                  <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="nox-surface nox-card-shine rounded-xl border border-border p-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5 text-muted-foreground mb-1">
-                      {stat.icon}
-                      <span className="text-[10px] uppercase tracking-widest font-bold">{stat.label}</span>
-                    </div>
-                    <p className="text-xl font-black text-foreground">{stat.value}</p>
-                  </motion.div>
-                ))}
+                className="nox-surface nox-card-shine rounded-xl border border-border p-5 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-lg nox-gradient flex items-center justify-center nox-glow-sm">
+                  <Trophy className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Total Won</p>
+                  <p className="text-2xl font-black text-green-400">+{stats.totalWon.toLocaleString()} <span className="text-sm text-muted-foreground font-medium">points</span></p>
+                </div>
               </motion.div>
             )}
 
