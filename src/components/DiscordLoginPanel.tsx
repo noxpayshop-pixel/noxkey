@@ -84,7 +84,7 @@ const DiscordLoginPanel = ({ onSuccess, embedded = false }: DiscordLoginPanelPro
         return;
       }
 
-      login(username.trim(), data.session_token);
+      login(username.trim().toLowerCase(), data.session_token);
       onSuccess?.();
     } catch {
       setError('Network error. Please try again.');
