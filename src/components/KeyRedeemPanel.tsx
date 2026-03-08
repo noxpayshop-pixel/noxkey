@@ -3,13 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { redeemCode } from '@/lib/store';
-import { KeyRound, CheckCircle2, XCircle, AlertTriangle, Copy } from 'lucide-react';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
+import DiscordLoginPanel from '@/components/DiscordLoginPanel';
+import { KeyRound, CheckCircle2, XCircle, AlertTriangle, Copy, LogOut, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const KeyRedeemPanel = () => {
+  const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
-  const [discord, setDiscord] = useState('');
-  const [step, setStep] = useState<'code' | 'info' | 'result'>('code');
+  const [step, setStep] = useState<'code' | 'email' | 'result'>('code');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
@@ -22,14 +25,14 @@ const KeyRedeemPanel = () => {
 
   const handleCodeSubmit = () => {
     if (!code.trim()) return;
-    setStep('info');
+    setStep('email');
   };
 
   const handleRedeem = async () => {
-    if (!email.trim() || !discord.trim()) return;
+    if (!email.trim() || !discordUsername) return;
     setLoading(true);
     try {
-      const res = await redeemCode(code.trim(), email.trim(), discord.trim());
+      const res = await redeemCode(code.trim(), email.trim(), discordUsername);
       setResult(res);
       setStep('result');
     } catch {
@@ -49,13 +52,37 @@ const KeyRedeemPanel = () => {
   const reset = () => {
     setCode('');
     setEmail('');
-    setDiscord('');
     setStep('code');
     setResult(null);
   };
 
+  if (authLoading) return null;
+
+  // Not logged in → show login
+  if (!isLoggedIn) {
+    return <DiscordLoginPanel />;
+  }
+
   return (
     <div className="w-full max-w-lg mx-auto">
+      {/* Logged in indicator */}
+      <div className="flex items-center justify-between mb-4 px-1">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <User className="w-4 h-4" />
+          Logged in as <span className="text-primary font-medium">@{discordUsername}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link to="/myclaims">
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
+              My Claims
+            </Button>
+          </Link>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={logout}>
+            <LogOut className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+
       <motion.div
         className="nox-surface rounded-2xl border border-border p-8 nox-glow"
         initial={{ opacity: 0, y: 20 }}
@@ -86,21 +113,16 @@ const KeyRedeemPanel = () => {
             </motion.div>
           )}
 
-          {step === 'info' && (
-            <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-              <p className="text-muted-foreground">Please provide your contact details to proceed.</p>
+          {step === 'email' && (
+            <motion.div key="email" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              <p className="text-muted-foreground">Please provide your email to proceed. Your Discord is already linked.</p>
               <Input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email address"
                 type="email"
                 className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-              />
-              <Input
-                value={discord}
-                onChange={(e) => setDiscord(e.target.value)}
-                placeholder="Your Discord username"
-                className="bg-background border-border text-foreground placeholder:text-muted-foreground"
+                onKeyDown={(e) => e.key === 'Enter' && handleRedeem()}
               />
               <div className="flex gap-3">
                 <Button variant="ghost" onClick={() => setStep('code')}>Back</Button>
@@ -135,6 +157,9 @@ const KeyRedeemPanel = () => {
                       <p className="text-sm text-foreground whitespace-pre-wrap">{result.description}</p>
                     </div>
                   )}
+                  <Link to="/myclaims">
+                    <Button variant="noxOutline" className="w-full mt-2">View All My Claims</Button>
+                  </Link>
                 </div>
               ) : result.outOfStock ? (
                 <div className="space-y-4">
@@ -144,7 +169,7 @@ const KeyRedeemPanel = () => {
                   </div>
                   <p className="text-muted-foreground">
                     Sorry, we are currently out of stock for <span className="text-foreground font-semibold">{result.productName}</span>.
-                    Your Discord username and email have been saved — you'll automatically receive your deliverables via DM when we restock!
+                    You'll receive a Discord notification when your item is ready. Track it in your <Link to="/myclaims" className="text-primary hover:underline">Claims</Link>.
                   </p>
                 </div>
               ) : (
