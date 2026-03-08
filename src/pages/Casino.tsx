@@ -46,6 +46,8 @@ const ALL_GAMES: GameDef[] = [
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
   const [points, setPoints] = useState(0);
+  const pointsRef = useRef(0);
+  const setPointsTracked = (n: number) => { pointsRef.current = n; setPoints(n); };
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [betAmount, setBetAmount] = useState(1);
