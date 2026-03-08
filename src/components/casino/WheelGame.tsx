@@ -105,12 +105,10 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
     if (discordUsername) {
       const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
       if (!shouldWin) {
-        // Land on 0x
-        const zeroIndices = SEGMENTS.map((s, i) => s.multiplier === 0 ? i : -1).filter(i => i >= 0);
+        const zeroIndices = SEGMENTS.map((s, i) => s.amount === 0 ? i : -1).filter(i => i >= 0);
         targetIdx = zeroIndices[Math.floor(Math.random() * zeroIndices.length)];
       } else {
-        // Land on a winning segment
-        const winIndices = SEGMENTS.map((s, i) => s.multiplier > 0 ? i : -1).filter(i => i >= 0);
+        const winIndices = SEGMENTS.map((s, i) => s.amount > 0 ? i : -1).filter(i => i >= 0);
         targetIdx = winIndices[Math.floor(Math.random() * winIndices.length)];
       }
     } else {
