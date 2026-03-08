@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      discord_users: {
+        Row: {
+          created_at: string | null
+          discord_username: string
+          id: string
+          session_token: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          discord_username: string
+          id?: string
+          session_token?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          discord_username?: string
+          id?: string
+          session_token?: string | null
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          discord_username: string
+          expires_at: string
+          id: string
+          is_used: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          discord_username: string
+          expires_at: string
+          id?: string
+          is_used?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          discord_username?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           created_at: string | null
