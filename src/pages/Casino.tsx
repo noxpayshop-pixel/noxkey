@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
 import { supabase } from '@/integrations/supabase/client';
-import { placeBet, getRecentActivity, getUserStats } from '@/lib/casino';
+import { placeBet, deductBet, completeBet, getRecentActivity, getUserStats } from '@/lib/casino';
 import { getSettings } from '@/lib/store';
 import { Link } from 'react-router-dom';
 import {
   Loader2, Coins, ArrowLeft, LogOut, TrendingUp, TrendingDown,
-  Flame, Trophy, Dices, Target, Zap, Droplets,
+  Flame, Trophy, Dices, Target, Zap, Droplets, Bird,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import TowersGame from '@/components/casino/TowersGame';
 import BlackjackGame from '@/components/casino/BlackjackGame';
 import LimboGame from '@/components/casino/LimboGame';
 import SplatGame from '@/components/casino/SplatGame';
+import ChickenRoadGame from '@/components/casino/ChickenRoadGame';
 
 interface GameDef {
   id: string;
@@ -35,11 +36,15 @@ const ALL_GAMES: GameDef[] = [
   { id: 'coinflip', name: 'Coin Flip', description: 'Double or nothing. Pick a side.', icon: <Coins className="w-5 h-5" />, color: 'text-yellow-400', gradient: 'from-yellow-500/20 to-amber-500/10' },
   { id: 'crash', name: 'Crash', description: 'Cash out before it crashes!', icon: <TrendingUp className="w-5 h-5" />, color: 'text-green-400', gradient: 'from-green-500/20 to-emerald-500/10' },
   { id: 'mines', name: 'Mines', description: 'Find diamonds, avoid the bombs.', icon: <Target className="w-5 h-5" />, color: 'text-red-400', gradient: 'from-red-500/20 to-rose-500/10' },
+  { id: 'chicken', name: 'Chicken Road', description: 'Cross the road, avoid the cars!', icon: <span className="text-lg">🐔</span>, color: 'text-amber-400', gradient: 'from-amber-500/20 to-yellow-500/10' },
   { id: 'towers', name: 'Towers', description: 'Climb the tower for multipliers.', icon: <Zap className="w-5 h-5" />, color: 'text-blue-400', gradient: 'from-blue-500/20 to-indigo-500/10' },
   { id: 'blackjack', name: 'Blackjack', description: 'Classic 21. Hit or Stand?', icon: <Dices className="w-5 h-5" />, color: 'text-purple-400', gradient: 'from-purple-500/20 to-violet-500/10' },
   { id: 'limbo', name: 'Limbo', description: 'Predict the multiplier.', icon: <Flame className="w-5 h-5" />, color: 'text-orange-400', gradient: 'from-orange-500/20 to-amber-500/10' },
   { id: 'splat', name: 'Splat', description: 'Pick a color, watch the splat!', icon: <Droplets className="w-5 h-5" />, color: 'text-pink-400', gradient: 'from-pink-500/20 to-fuchsia-500/10' },
 ];
+
+// Games that use deduct-first flow (player-driven outcomes)
+const DEDUCT_FIRST_GAMES = ['mines', 'chicken'];
 
 const Casino = () => {
   const { isLoggedIn, discordUsername, logout, loading: authLoading } = useDiscordAuth();
@@ -51,6 +56,7 @@ const Casino = () => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [enabledGames, setEnabledGames] = useState<string[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<Array<{ won: boolean; amount: number }>>([]);
 
   const fetchData = useCallback(async () => {
     if (!discordUsername) return;
@@ -80,36 +86,61 @@ const Casino = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
+  // Reset session history when switching games
+  useEffect(() => { setSessionHistory([]); }, [selectedGame]);
+
+  // Standard play handler (house-edge decides outcome)
   const handlePlay = async (): Promise<{ won: boolean; payout: number; winStreak: number }> => {
-    if (!selectedGame || !discordUsername || betAmount < 1 || betAmount > points) {
-      throw new Error('Invalid');
-    }
+    if (!selectedGame || !discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
     setPlaying(true);
     try {
       const res = await placeBet(discordUsername, selectedGame, betAmount, points);
       setPoints(res.newPoints);
+      const net = res.won ? res.payout - betAmount : -betAmount;
+      setSessionHistory(prev => [{ won: res.won, amount: net }, ...prev]);
       if (res.won) toast.success(`🎉 You won ${res.payout} points!`, { duration: 4000 });
       else toast.error(`💀 You lost ${betAmount} points`, { duration: 3000 });
       getUserStats(discordUsername).then(setStats);
-      getRecentActivity(15).then(setRecentActivity);
       return res;
     } finally {
       setPlaying(false);
     }
   };
 
+  // Deduct-first handler (for mines, chicken)
+  const handleDeduct = async () => {
+    if (!discordUsername || betAmount < 1 || betAmount > points) throw new Error('Invalid');
+    const res = await deductBet(discordUsername, betAmount, points);
+    setPoints(res.newPoints);
+  };
+
+  const handleComplete = async (won: boolean, payout: number) => {
+    if (!selectedGame || !discordUsername) return;
+    const res = await completeBet(discordUsername, selectedGame, betAmount, won, payout, points);
+    setPoints(res.newPoints);
+    const net = won ? payout - betAmount : -betAmount;
+    setSessionHistory(prev => [{ won, amount: net }, ...prev]);
+    if (won) toast.success(`🎉 You won ${payout} points!`, { duration: 4000 });
+    else toast.error(`💀 You lost ${betAmount} points`, { duration: 3000 });
+    getUserStats(discordUsername).then(setStats);
+  };
+
   const GAMES = ALL_GAMES.filter(g => enabledGames.includes(g.id));
 
   const renderGame = () => {
-    const commonProps = { points, betAmount, setBetAmount, onPlay: handlePlay, playing };
+    const commonProps = { points, betAmount, setBetAmount, playing, sessionHistory };
+    const deductProps = { ...commonProps, onDeduct: handleDeduct, onComplete: handleComplete };
+    const playProps = { ...commonProps, onPlay: handlePlay };
+
     switch (selectedGame) {
-      case 'coinflip': return <CoinFlipGame {...commonProps} />;
-      case 'mines': return <MinesGame {...commonProps} />;
-      case 'crash': return <CrashGame {...commonProps} />;
-      case 'towers': return <TowersGame {...commonProps} />;
-      case 'blackjack': return <BlackjackGame {...commonProps} />;
-      case 'limbo': return <LimboGame {...commonProps} />;
-      case 'splat': return <SplatGame {...commonProps} />;
+      case 'coinflip': return <CoinFlipGame {...playProps} />;
+      case 'mines': return <MinesGame {...deductProps} />;
+      case 'crash': return <CrashGame {...playProps} />;
+      case 'chicken': return <ChickenRoadGame {...deductProps} />;
+      case 'towers': return <TowersGame {...playProps} />;
+      case 'blackjack': return <BlackjackGame {...playProps} />;
+      case 'limbo': return <LimboGame {...playProps} />;
+      case 'splat': return <SplatGame {...playProps} />;
       default: return null;
     }
   };
@@ -129,7 +160,6 @@ const Casino = () => {
         <div className="absolute bottom-0 left-1/3 w-[500px] h-[400px] rounded-full bg-accent/3 blur-[120px]" />
       </div>
 
-      {/* Header */}
       <div className="relative z-10 border-b border-border glass">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
@@ -175,7 +205,6 @@ const Casino = () => {
             <Button variant="ghost" size="sm" onClick={() => setSelectedGame(null)} className="mb-4">
               <ArrowLeft className="w-4 h-4 mr-1" /> Back to Games
             </Button>
-            {/* Win streak banner */}
             {stats && stats.currentStreak >= 2 && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
                 className="mb-6 nox-gradient rounded-2xl p-4 flex items-center gap-3">

@@ -9,12 +9,13 @@ interface Props {
   setBetAmount: (n: number) => void;
   onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
 const ROWS = 8;
 const COLS = 3;
 
-export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function TowersGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [gameActive, setGameActive] = useState(false);
   const [currentRow, setCurrentRow] = useState(0);
   const [safeColumns, setSafeColumns] = useState<number[]>([]);

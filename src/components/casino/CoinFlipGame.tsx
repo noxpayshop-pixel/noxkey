@@ -9,9 +9,10 @@ interface Props {
   setBetAmount: (n: number) => void;
   onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [result, setResult] = useState<{ won: boolean; payout: number } | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [side, setSide] = useState<'heads' | 'tails'>('heads');

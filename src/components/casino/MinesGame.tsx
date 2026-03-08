@@ -1,20 +1,22 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Loader2, Bomb, Gem } from 'lucide-react';
+import { Coins, Bomb, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
   points: number;
   betAmount: number;
   setBetAmount: (n: number) => void;
-  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  onDeduct: () => Promise<void>;
+  onComplete: (won: boolean, payout: number) => Promise<void>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
 const GRID_SIZE = 5;
 const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
-export default function MinesGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
   const [mineCount, setMineCount] = useState(5);
   const [gameActive, setGameActive] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -23,9 +25,9 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
   const [cashedOut, setCashedOut] = useState(false);
   const [currentMult, setCurrentMult] = useState(1.0);
   const [payout, setPayout] = useState(0);
+  const [lockedBet, setLockedBet] = useState(0);
 
-  const startGame = useCallback(() => {
-    // Place mines randomly
+  const startGame = useCallback(async () => {
     const minePositions = new Set<number>();
     while (minePositions.size < mineCount) {
       minePositions.add(Math.floor(Math.random() * TOTAL_TILES));
@@ -36,17 +38,18 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
     setCashedOut(false);
     setCurrentMult(1.0);
     setPayout(0);
+    setLockedBet(betAmount);
+    await onDeduct();
     setGameActive(true);
-  }, [mineCount]);
+  }, [mineCount, betAmount, onDeduct]);
 
   const handleTileClick = async (index: number) => {
     if (!gameActive || revealed.has(index) || hitMine !== null) return;
 
     if (mines.has(index)) {
-      // Hit a mine - loss
       setHitMine(index);
       setGameActive(false);
-      await onPlay(); // Record loss
+      await onComplete(false, 0);
       return;
     }
 
@@ -54,17 +57,16 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
     newRevealed.add(index);
     setRevealed(newRevealed);
 
-    // Calculate multiplier: more revealed = higher mult
     const safeTiles = TOTAL_TILES - mineCount;
     const revealedCount = newRevealed.size;
     const mult = parseFloat(((safeTiles / (safeTiles - revealedCount + 1)) * (1 + revealedCount * 0.15)).toFixed(2));
     setCurrentMult(mult);
-    setPayout(Math.floor(betAmount * mult));
+    setPayout(Math.floor(lockedBet * mult));
 
-    // If all safe tiles revealed = auto cashout
     if (revealedCount >= safeTiles) {
       setCashedOut(true);
       setGameActive(false);
+      await onComplete(true, Math.floor(lockedBet * mult));
     }
   };
 
@@ -72,8 +74,7 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
     if (!gameActive || revealed.size === 0) return;
     setCashedOut(true);
     setGameActive(false);
-    // The actual bet was already determined; we'll just record it as a win
-    await onPlay();
+    await onComplete(true, payout);
   };
 
   const nextTileMult = () => {
@@ -87,7 +88,6 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Game Grid */}
       <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center">
         <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Mines</h2>
         <p className="text-xs text-muted-foreground mb-8">Find diamonds, avoid the bombs</p>
@@ -134,7 +134,6 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
           })}
         </div>
 
-        {/* Result */}
         {isGameOver && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 text-center">
             {hitMine !== null ? (
@@ -146,7 +145,6 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
         )}
       </div>
 
-      {/* Controls Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -212,6 +210,25 @@ export default function MinesGame({ points, betAmount, setBetAmount, onPlay, pla
               </Button>
             </>
           )}
+        </div>
+
+        {/* Session History */}
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

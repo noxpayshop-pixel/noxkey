@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Loader2, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -9,9 +9,10 @@ interface Props {
   setBetAmount: (n: number) => void;
   onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-export default function CrashGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function CrashGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [gameState, setGameState] = useState<'idle' | 'running' | 'crashed' | 'cashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.0);
   const [crashPoint, setCrashPoint] = useState(0);
@@ -22,8 +23,7 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
   const dataRef = useRef<number[]>([]);
 
   const startGame = async () => {
-    // Determine crash point (house edge baked in)
-    const crash = 1 + Math.random() * 4; // 1.0x - 5.0x
+    const crash = 1 + Math.random() * 4;
     setCrashPoint(crash);
     setMultiplier(1.0);
     setGameState('running');
@@ -41,7 +41,7 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
       if (mult >= crash) {
         clearInterval(intervalRef.current);
         setGameState('crashed');
-        onPlay(); // Record loss
+        onPlay();
       }
     }, 80);
   };
@@ -52,33 +52,28 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
     setCashoutMult(multiplier);
     setPayout(Math.floor(betAmount * multiplier));
     setGameState('cashed');
-    await onPlay(); // Record win
+    await onPlay();
   };
 
   useEffect(() => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 
-  // Draw graph
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
     const w = canvas.width;
     const h = canvas.height;
     ctx.clearRect(0, 0, w, h);
-
     const data = dataRef.current;
     if (data.length < 2) return;
-
     const maxMult = Math.max(...data, 2);
     ctx.beginPath();
     ctx.strokeStyle = gameState === 'crashed' ? 'hsl(0, 72%, 51%)' : gameState === 'cashed' ? 'hsl(142, 76%, 36%)' : 'hsl(270, 80%, 65%)';
     ctx.lineWidth = 3;
     ctx.lineJoin = 'round';
-
     data.forEach((val, i) => {
       const x = (i / Math.max(data.length - 1, 1)) * w;
       const y = h - ((val - 1) / (maxMult - 1)) * h * 0.85 - h * 0.05;
@@ -86,11 +81,7 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
       else ctx.lineTo(x, y);
     });
     ctx.stroke();
-
-    // Fill under curve
-    const lastX = w;
-    const lastY = h;
-    ctx.lineTo(lastX, lastY);
+    ctx.lineTo(w, h);
     ctx.lineTo(0, h);
     ctx.closePath();
     ctx.fillStyle = gameState === 'crashed' ? 'hsla(0, 72%, 51%, 0.05)' : 'hsla(270, 80%, 65%, 0.05)';
@@ -101,12 +92,13 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Game Area */}
       <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center min-h-[500px]">
-        <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Crash</h2>
-        <p className="text-xs text-muted-foreground mb-6">Cash out before it crashes!</p>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-2xl">📈</span>
+          <h2 className="text-sm font-bold uppercase tracking-widest text-foreground">Crash</h2>
+        </div>
+        <p className="text-xs text-muted-foreground mb-6">Cash out before the rocket crashes!</p>
 
-        {/* Multiplier display */}
         <motion.div
           animate={{ scale: gameState === 'running' ? [1, 1.02, 1] : 1 }}
           transition={{ repeat: gameState === 'running' ? Infinity : 0, duration: 0.5 }}
@@ -129,18 +121,17 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
           </motion.p>
         )}
 
-        {/* Graph */}
         <div className="w-full flex-1 min-h-[200px] relative rounded-xl bg-background border border-border overflow-hidden">
           <canvas ref={canvasRef} width={600} height={300} className="w-full h-full" />
           {gameState === 'idle' && (
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-              Place a bet and start
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
+              <span className="text-4xl font-black">1.00x</span>
+              <span className="text-xs uppercase tracking-wider mt-2">Waiting for bet...</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Controls Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -180,9 +171,28 @@ export default function CrashGame({ points, betAmount, setBetAmount, onPlay, pla
             <Button variant="nox" className="w-full h-14 text-lg font-bold"
               disabled={betAmount < 1 || betAmount > points || points === 0}
               onClick={startGame}>
-              {gameState === 'idle' ? 'START' : 'PLAY AGAIN'}
+              {gameState === 'idle' ? 'JOIN GAME' : 'PLAY AGAIN'}
             </Button>
           )}
+        </div>
+
+        {/* Session History */}
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

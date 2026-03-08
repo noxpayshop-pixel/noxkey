@@ -9,6 +9,7 @@ interface Props {
   setBetAmount: (n: number) => void;
   onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
 const COLORS = [
@@ -18,7 +19,7 @@ const COLORS = [
   { bg: 'bg-yellow-500', text: 'text-yellow-500', glow: 'shadow-yellow-500/30', label: 'Gold', mult: 10 },
 ];
 
-export default function SplatGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function SplatGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [chosenColor, setChosenColor] = useState(0);
   const [splatResult, setSplatResult] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
