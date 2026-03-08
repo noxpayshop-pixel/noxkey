@@ -102,6 +102,15 @@
     border-color: hsl(var(--border));
   }
 
+  .nox-hover-glow {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .nox-hover-glow:hover {
+    border-color: hsl(var(--nox-glow) / 0.5);
+    box-shadow: 0 0 20px -5px hsl(var(--nox-glow) / 0.3), inset 0 0 20px -10px hsl(var(--nox-glow) / 0.1);
+  }
+
   .glass {
     background: hsl(var(--nox-surface) / 0.6);
     backdrop-filter: blur(20px);
