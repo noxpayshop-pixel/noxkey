@@ -3,15 +3,44 @@ import KeyRedeemPanel from '@/components/KeyRedeemPanel';
 import PromoSection from '@/components/PromoSection';
 import TrustSection from '@/components/TrustSection';
 import { Link } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, Heart } from 'lucide-react';
 import logo from '@/assets/logo.gif';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background relative nox-noise">
+      {/* Navigation bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border/50">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <img src={logo} alt="The Nox" className="w-7 h-7 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-black nox-gradient-text tracking-tight">THE NOX</span>
+          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/myclaims" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              My Items
+            </Link>
+            <Link to="/mypoints" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              Points
+            </Link>
+            <Link to="/casino" className="text-xs font-bold text-primary hover:text-accent transition-colors uppercase tracking-wider">
+              Casino
+            </Link>
+            <a
+              href="https://discord.gg/thenox"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
+            >
+              Discord
+            </a>
+          </div>
+        </div>
+      </nav>
+
       <HeroSection />
 
-      <section className="px-6 pb-24 -mt-6 relative z-10">
+      <section className="px-6 pb-28 -mt-8 relative z-10">
         <KeyRedeemPanel />
       </section>
 
@@ -19,29 +48,49 @@ const Index = () => {
       <TrustSection />
 
       {/* Footer */}
-      <footer className="relative border-t border-border py-12 px-6">
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="The Nox" className="w-6 h-6 opacity-50" />
-            <p className="text-sm text-muted-foreground/60">© 2026 The Nox. All rights reserved.</p>
+      <footer className="relative border-t border-border py-16 px-6">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-primary/3 blur-[150px]" />
+        </div>
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <div className="flex items-center gap-3">
+                <img src={logo} alt="The Nox" className="w-8 h-8" />
+                <span className="text-lg font-black nox-gradient-text">The Nox</span>
+              </div>
+              <p className="text-xs text-muted-foreground/50 flex items-center gap-1">
+                Made with <Heart className="w-3 h-3 text-destructive/50" /> for our community
+              </p>
+            </div>
+            <div className="flex items-center gap-8">
+              <Link to="/myclaims" className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium">
+                My Items
+              </Link>
+              <Link to="/mypoints" className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium">
+                Points
+              </Link>
+              <a
+                href="https://discord.gg/thenox"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium"
+              >
+                Discord
+              </a>
+              <Link
+                to="/dev"
+                className="text-xs text-muted-foreground/20 hover:text-muted-foreground/50 transition-colors flex items-center gap-1"
+              >
+                <Lock className="w-3 h-3" /> Dev
+              </Link>
+            </div>
           </div>
-          <div className="flex items-center gap-8">
-            <a
-              href="https://discord.gg/thenox"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Discord
-            </a>
-            <Link
-              to="/dev"
-              className="text-sm text-muted-foreground/30 hover:text-muted-foreground transition-colors flex items-center gap-1.5"
-            >
-              <Lock className="w-3 h-3" /> Dev
-            </Link>
-          </div>
+          <div className="nox-divider mt-8 mb-6" />
+          <p className="text-[10px] text-muted-foreground/30 text-center uppercase tracking-widest">
+            © 2026 The Nox. All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
