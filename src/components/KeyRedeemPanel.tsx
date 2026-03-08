@@ -197,7 +197,7 @@ const KeyRedeemPanel = () => {
           {/* Step 3: Login with Discord OTP */}
           {step === 'login' && (
             <motion.div key="login" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <DiscordLoginPanel onSuccess={handleLoginSuccess} />
+              <DiscordLoginPanel onSuccess={handleLoginSuccess} embedded />
             </motion.div>
           )}
 
