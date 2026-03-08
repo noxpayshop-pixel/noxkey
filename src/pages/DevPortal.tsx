@@ -295,8 +295,16 @@ function ProductDetailView({ product, onBack }: { product: ProductDetail; onBack
         <label className="text-sm text-muted-foreground mb-1 block">Product Description (How to Use)</label>
         <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Explain how to use the product after redeeming..."
           className="bg-card border-border text-foreground placeholder:text-muted-foreground min-h-[100px]" />
-        <div className="flex justify-end mt-2"><Button variant="noxOutline" size="sm" onClick={handleDescSave}>Save Description</Button></div>
       </div>
+      <div>
+        <label className="text-sm text-muted-foreground mb-1 block">Max Bonus Points on Redeem (0 = no bonus)</label>
+        <div className="flex items-center gap-2">
+          <Input value={maxBonus} onChange={(e) => setMaxBonus(e.target.value)} type="number" min="0"
+            className="w-32 bg-card border-border text-foreground" />
+          <span className="text-xs text-muted-foreground">Users get 0–{maxBonus || '5'} random points when redeeming</span>
+        </div>
+      </div>
+      <div className="flex justify-end"><Button variant="noxOutline" size="sm" onClick={handleDescSave}>Save Settings</Button></div>
       <div>
         <label className="text-sm text-muted-foreground mb-1 block">Stock (one item per line)</label>
         <Textarea value={stockInput} onChange={(e) => setStockInput(e.target.value)} placeholder="Enter deliverable items, one per line..."
