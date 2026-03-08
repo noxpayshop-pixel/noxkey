@@ -9,9 +9,10 @@ interface Props {
   setBetAmount: (n: number) => void;
   onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
   playing: boolean;
+  sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-export default function LimboGame({ points, betAmount, setBetAmount, onPlay, playing }: Props) {
+export default function LimboGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
   const [targetMult, setTargetMult] = useState(2.0);
   const [resultMult, setResultMult] = useState<number | null>(null);
   const [won, setWon] = useState<boolean | null>(null);
