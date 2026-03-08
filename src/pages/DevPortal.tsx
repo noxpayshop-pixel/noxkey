@@ -254,7 +254,11 @@ function ProductDetailView({ product, onBack }: { product: ProductDetail; onBack
     })();
   }, [product.id]);
 
-  const handleDescSave = async () => { await updateProductDescription(product.id, description); toast.success('Description saved'); };
+  const handleDescSave = async () => {
+    await updateProductDescription(product.id, description);
+    await supabase.from('products').update({ max_bonus_points: parseInt(maxBonus) || 5 }).eq('id', product.id);
+    toast.success('Settings saved');
+  };
   const handleStockSave = async () => {
     const items = stockInput.split('\n').map(s => s.trim()).filter(Boolean);
     await setStock(product.id, items);
