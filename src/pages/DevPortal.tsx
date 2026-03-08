@@ -261,42 +261,58 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
                 </div>
 
-                {/* Feedback Images */}
+                {/* Feedback Images - Upload */}
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Feedback Images (URLs, shown on homepage)</label>
-                  <div className="space-y-2">
-                    {(settings.feedbackImages || []).map((url, i) => (
-                      <div key={i} className="flex gap-2 items-center">
-                        {url && (
-                          <img src={url} alt="" className="w-10 h-10 rounded object-cover border border-border flex-shrink-0" />
-                        )}
-                        <Input
-                          value={url}
-                          onChange={(e) => {
-                            const imgs = [...(settings.feedbackImages || [])];
-                            imgs[i] = e.target.value;
+                  <label className="text-sm text-muted-foreground mb-2 block">Feedback Images (shown on homepage)</label>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {(settings.feedbackImages || []).map((url, i) => (
+                        url && (
+                          <div key={i} className="relative group">
+                            <img src={url} alt="" className="w-full h-24 rounded-lg object-cover border border-border" />
+                            <Button variant="ghost" size="icon"
+                              className="absolute top-1 right-1 w-6 h-6 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                const imgs = (settings.feedbackImages || []).filter((_, idx) => idx !== i);
+                                const s = { ...settings, feedbackImages: imgs };
+                                setSettingsState(s); saveSettings(s);
+                              }}>
+                              <Trash2 className="w-3 h-3 text-destructive" />
+                            </Button>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          const newUrls: string[] = [];
+                          for (const file of Array.from(files)) {
+                            const path = `feedback/${Date.now()}-${file.name}`;
+                            const { error } = await supabase.storage.from('screenshots').upload(path, file);
+                            if (error) { toast.error(`Upload failed: ${file.name}`); continue; }
+                            const { data } = supabase.storage.from('screenshots').getPublicUrl(path);
+                            newUrls.push(data.publicUrl);
+                          }
+                          if (newUrls.length > 0) {
+                            const imgs = [...(settings.feedbackImages || []), ...newUrls];
                             const s = { ...settings, feedbackImages: imgs };
                             setSettingsState(s); saveSettings(s);
-                          }}
-                          placeholder="https://... (image URL)"
-                          className="bg-card border-border text-foreground placeholder:text-muted-foreground flex-1"
-                        />
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          const imgs = (settings.feedbackImages || []).filter((_, idx) => idx !== i);
-                          const s = { ...settings, feedbackImages: imgs };
-                          setSettingsState(s); saveSettings(s);
-                        }}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="noxOutline" size="sm" onClick={() => {
-                      const imgs = [...(settings.feedbackImages || []), ''];
-                      const s = { ...settings, feedbackImages: imgs };
-                      setSettingsState(s); saveSettings(s);
-                    }}>
-                      <Plus className="w-4 h-4 mr-1" /> Add Image
-                    </Button>
+                            toast.success(`${newUrls.length} image(s) uploaded`);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent transition-colors cursor-pointer border border-border rounded-lg px-4 py-2">
+                        <ImageIcon className="w-4 h-4" /> Upload Images
+                      </span>
+                    </label>
                   </div>
                 </div>
 
