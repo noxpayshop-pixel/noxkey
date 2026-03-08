@@ -88,7 +88,14 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
 
     const safeTiles = TOTAL_TILES - mineCount;
     const revealedCount = newRevealed.size;
-    const mult = parseFloat(((safeTiles / (safeTiles - revealedCount + 1)) * (1 + revealedCount * 0.15)).toFixed(2));
+    // House-edge multiplier: based on true odds * 0.90 (10% house edge)
+    // True fair mult per tile = TOTAL_TILES / safeTiles compounded
+    // We use: product of (remaining / safe_remaining) with 0.90 cut
+    let mult = 1.0;
+    for (let i = 0; i < revealedCount; i++) {
+      mult *= (TOTAL_TILES - i) / (safeTiles - i) * 0.90;
+    }
+    mult = parseFloat(Math.max(1.0, mult).toFixed(2));
     setCurrentMult(mult);
     setPayout(Math.floor(lockedBet * mult));
 
