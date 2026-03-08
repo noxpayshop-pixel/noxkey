@@ -36,7 +36,7 @@ const DiscordLoginPanel = ({ onSuccess, embedded = false }: DiscordLoginPanelPro
             'Authorization': `Bearer ${anonKey}`,
             'apikey': anonKey,
           },
-          body: JSON.stringify({ action: 'send_otp', discord_username: username.trim() }),
+          body: JSON.stringify({ action: 'send_otp', discord_username: username.trim().toLowerCase() }),
         }
       );
 
@@ -73,7 +73,7 @@ const DiscordLoginPanel = ({ onSuccess, embedded = false }: DiscordLoginPanelPro
             'Authorization': `Bearer ${anonKey}`,
             'apikey': anonKey,
           },
-          body: JSON.stringify({ action: 'verify_otp', discord_username: username.trim(), otp: otp.trim() }),
+          body: JSON.stringify({ action: 'verify_otp', discord_username: username.trim().toLowerCase(), otp: otp.trim() }),
         }
       );
 
@@ -84,7 +84,7 @@ const DiscordLoginPanel = ({ onSuccess, embedded = false }: DiscordLoginPanelPro
         return;
       }
 
-      login(username.trim(), data.session_token);
+      login(username.trim().toLowerCase(), data.session_token);
       onSuccess?.();
     } catch {
       setError('Network error. Please try again.');
