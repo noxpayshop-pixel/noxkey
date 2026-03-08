@@ -233,6 +233,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
 
 function ProductDetailView({ product, onBack }: { product: ProductDetail; onBack: () => void }) {
   const [description, setDescription] = useState(product.description);
+  const [maxBonus, setMaxBonus] = useState(String((product as any).max_bonus_points ?? 5));
   const [stockInput, setStockInput] = useState('');
   const [codes, setCodes] = useState<string[]>([]);
   const [waitlist, setWaitlistState] = useState<WaitlistEntry[]>([]);
