@@ -41,7 +41,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
   const { discordUsername } = useDiscordAuth();
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [result, setResult] = useState<{ won: boolean; payout: number; multiplier: number } | null>(null);
+  const [result, setResult] = useState<{ won: boolean; payout: number; amount: number } | null>(null);
   const [lockedBet, setLockedBet] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
