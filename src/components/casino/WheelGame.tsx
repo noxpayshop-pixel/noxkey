@@ -145,7 +145,7 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       {/* Game area */}
       <div className="nox-surface rounded-2xl border border-border p-8 flex flex-col items-center justify-center min-h-[600px]">
         <h2 className="text-lg font-black uppercase tracking-wider text-foreground mb-1">🎡 Lucky Wheel</h2>
-        <p className="text-xs text-muted-foreground mb-10">Spin to win up to 5x your bet!</p>
+        <p className="text-xs text-muted-foreground mb-10">Spin to win up to +25 points!</p>
 
         <div className="relative">
           {/* Pointer */}
