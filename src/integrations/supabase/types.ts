@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      casino_bets: {
+        Row: {
+          bet_amount: number
+          created_at: string
+          discord_username: string
+          game: string
+          id: string
+          payout: number
+          won: boolean
+        }
+        Insert: {
+          bet_amount: number
+          created_at?: string
+          discord_username: string
+          game: string
+          id?: string
+          payout?: number
+          won?: boolean
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string
+          discord_username?: string
+          game?: string
+          id?: string
+          payout?: number
+          won?: boolean
+        }
+        Relationships: []
+      }
       discord_users: {
         Row: {
           created_at: string | null
