@@ -5,10 +5,30 @@ import TrustSection from '@/components/TrustSection';
 import { Link } from 'react-router-dom';
 import { Lock, Heart } from 'lucide-react';
 import logo from '@/assets/logo.gif';
+import { useEffect, useRef } from 'react';
 
 const Index = () => {
+  const spotlightRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (spotlightRef.current) {
+        spotlightRef.current.style.left = `${e.clientX}px`;
+        spotlightRef.current.style.top = `${e.clientY}px`;
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background relative nox-noise">
+      {/* Mouse spotlight */}
+      <div
+        ref={spotlightRef}
+        className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-[0.07] transition-[left,top] duration-100 ease-out"
+        style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+      />
       {/* Navigation bar */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-strong border-b border-border/50">
         <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
