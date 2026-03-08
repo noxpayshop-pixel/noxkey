@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
+import ReplacementRequestForm from '@/components/ReplacementRequestForm';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
-import { Loader2, Package, CheckCircle2, Clock, Copy, LogOut, ArrowLeft, Sparkles } from 'lucide-react';
+import { Loader2, Package, CheckCircle2, Copy, LogOut, ArrowLeft, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.gif';
 
@@ -24,9 +25,9 @@ const MyClaims = () => {
   const [loading, setLoading] = useState(true);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showReplacement, setShowReplacement] = useState(false);
 
   useEffect(() => {
-    // Load seen claim IDs from localStorage
     try {
       const stored = localStorage.getItem('nox_seen_claims');
       if (stored) setSeenIds(new Set(JSON.parse(stored)));
@@ -60,17 +61,9 @@ const MyClaims = () => {
 
     fetchClaims();
 
-    // Subscribe to realtime updates
     const channel = supabase
       .channel('my-claims')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'redemptions',
-        filter: `discord=eq.${discordUsername}`,
-      }, () => {
-        fetchClaims();
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'redemptions', filter: `discord=eq.${discordUsername}` }, () => fetchClaims())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -126,83 +119,100 @@ const MyClaims = () => {
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : claims.length === 0 ? (
-          <div className="text-center py-16">
-            <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg text-foreground font-medium">No claims yet</p>
-            <p className="text-muted-foreground mt-1">Redeem a key on the homepage to see your deliverables here.</p>
-            <Link to="/">
-              <Button variant="noxOutline" className="mt-4">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Go to Redeem Page
-              </Button>
-            </Link>
-          </div>
         ) : (
-          <div className="space-y-4 mt-4">
-            {claims.map((claim) => {
-              const isNew = claim.delivered_item && !seenIds.has(claim.id);
-              return (
-                <motion.div
-                  key={claim.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`nox-surface rounded-2xl border p-5 transition-all ${
-                    isNew ? 'border-primary nox-glow animate-pulse-glow' : 'border-border'
-                  }`}
-                  onClick={() => isNew && markSeen(claim.id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Package className="w-4 h-4 text-primary" />
-                      <span className="font-semibold text-foreground">{claim.product_name}</span>
-                      {isNew && (
-                        <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                          <Sparkles className="w-3 h-3" /> New
+          <>
+            {claims.length === 0 ? (
+              <div className="text-center py-16">
+                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg text-foreground font-medium">No claims yet</p>
+                <p className="text-muted-foreground mt-1">Redeem a key on the homepage to see your deliverables here.</p>
+                <Link to="/">
+                  <Button variant="noxOutline" className="mt-4">
+                    <ArrowLeft className="w-4 h-4 mr-2" /> Go to Redeem Page
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4 mt-4">
+                {claims.map((claim) => {
+                  const isNew = claim.delivered_item && !seenIds.has(claim.id);
+                  return (
+                    <motion.div
+                      key={claim.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`nox-surface rounded-2xl border p-5 transition-all ${
+                        isNew ? 'border-primary nox-glow animate-pulse-glow' : 'border-border'
+                      }`}
+                      onClick={() => isNew && markSeen(claim.id)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-primary" />
+                          <span className="font-semibold text-foreground">{claim.product_name}</span>
+                          {isNew && (
+                            <span className="flex items-center gap-1 text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+                              <Sparkles className="w-3 h-3" /> New
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(claim.created_at).toLocaleDateString()}
                         </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(claim.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="font-mono text-xs text-muted-foreground mb-3">Key: {claim.code}</div>
-
-                  {claim.delivered_item ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-green-400 text-sm">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span className="font-medium">Delivered</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-background rounded-xl p-3 border border-border">
-                        <code className="flex-1 font-mono text-sm text-primary break-all">{claim.delivered_item}</code>
-                        <Button variant="ghost" size="icon" onClick={() => handleCopy(claim.delivered_item!, claim.id)}>
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      {copiedId === claim.id && <p className="text-xs text-green-400">Copied!</p>}
-                      {claim.product_description && (
-                        <div className="bg-background rounded-xl p-3 border border-border">
-                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">How to Use</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">{claim.product_description}</p>
+
+                      <div className="font-mono text-xs text-muted-foreground mb-3">Key: {claim.code}</div>
+
+                      {claim.delivered_item ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span className="font-medium">Delivered</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-background rounded-xl p-3 border border-border">
+                            <code className="flex-1 font-mono text-sm text-primary break-all">{claim.delivered_item}</code>
+                            <Button variant="ghost" size="icon" onClick={() => handleCopy(claim.delivered_item!, claim.id)}>
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {copiedId === claim.id && <p className="text-xs text-green-400">Copied!</p>}
+                          {claim.product_description && (
+                            <div className="bg-background rounded-xl p-3 border border-border">
+                              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">How to Use</p>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{claim.product_description}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border">
+                          <Loader2 className="w-5 h-5 animate-spin text-yellow-400" />
+                          <div>
+                            <p className="text-sm text-foreground font-medium">Claim not completed yet</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              We're currently out of stock. You'll receive a Discord notification when your item is ready!
+                            </p>
+                          </div>
                         </div>
                       )}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border">
-                      <Loader2 className="w-5 h-5 animate-spin text-yellow-400" />
-                      <div>
-                        <p className="text-sm text-foreground font-medium">Claim not completed yet</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          We're currently out of stock. You'll receive a Discord notification when your item is ready!
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </motion.div>
-              );
-            })}
-          </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Replacement Request Section */}
+            {claims.length > 0 && (
+              <div className="mt-8">
+                {!showReplacement ? (
+                  <Button variant="noxOutline" className="w-full" onClick={() => setShowReplacement(true)}>
+                    <RefreshCw className="w-4 h-4 mr-2" /> Request Automated Replacement
+                  </Button>
+                ) : (
+                  <ReplacementRequestForm onSuccess={() => setShowReplacement(false)} />
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
