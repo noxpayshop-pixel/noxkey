@@ -69,28 +69,42 @@ const TrustSection = () => {
 
         {/* Vouch CTA */}
         <motion.div
-          className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine flex flex-col md:flex-row items-center justify-between gap-6"
+          className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
         >
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
-            <p className="text-sm text-muted-foreground">Check our verified vouches for proof of legitimacy.</p>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Check our <span className="text-foreground font-medium">MyVouch.es</span>, <span className="text-foreground font-medium">Sellauth</span>, or <span className="text-foreground font-medium">Discord server</span> to see all our verified vouches.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {settings.vouchUrl && (
+                <a
+                  href={settings.vouchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
+                >
+                  MyVouch.es →
+                </a>
+              )}
+              {settings.discordInvite && (
+                <a
+                  href={settings.discordInvite}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
+                >
+                  Discord →
+                </a>
+              )}
+            </div>
           </div>
-          {settings.vouchUrl ? (
-            <a
-              href={settings.vouchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-accent transition-colors text-sm font-semibold whitespace-nowrap flex items-center gap-1.5"
-            >
-              View Vouches →
-            </a>
-          ) : (
-            <span className="text-muted-foreground/50 text-sm">Vouch link not configured</span>
-          )}
         </motion.div>
       </div>
     </section>
