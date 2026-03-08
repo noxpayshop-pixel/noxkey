@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 import DiscordLoginPanel from '@/components/DiscordLoginPanel';
 import { supabase } from '@/integrations/supabase/client';
-import { placeBet, deductBet, completeBet, getRecentActivity, getUserStats } from '@/lib/casino';
+import { deductBet, completeBet, getRecentActivity, getUserStats } from '@/lib/casino';
 import { getSettings } from '@/lib/store';
 import { Link } from 'react-router-dom';
 import {
