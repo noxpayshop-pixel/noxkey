@@ -65,17 +65,17 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
 
   const BET_OPTIONS = [5, 10];
 
-  const drawWheel = (canvas: HTMLCanvasElement) => {
+  const drawWheel = (canvas: HTMLCanvasElement, segments: Segment[]) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const size = canvas.width;
     const center = size / 2;
     const radius = center - 4;
-    const segAngle = (2 * Math.PI) / SEGMENTS.length;
+    const segAngle = (2 * Math.PI) / segments.length;
 
     ctx.clearRect(0, 0, size, size);
 
-    SEGMENTS.forEach((seg, i) => {
+    segments.forEach((seg, i) => {
       const startAngle = i * segAngle - Math.PI / 2;
       const endAngle = startAngle + segAngle;
 
@@ -89,7 +89,6 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Text
       ctx.save();
       ctx.translate(center, center);
       ctx.rotate(startAngle + segAngle / 2);
@@ -100,7 +99,6 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
       ctx.restore();
     });
 
-    // Center circle
     ctx.beginPath();
     ctx.arc(center, center, 20, 0, 2 * Math.PI);
     ctx.fillStyle = 'hsl(var(--background))';
