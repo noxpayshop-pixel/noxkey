@@ -36,7 +36,7 @@ const DiscordLoginPanel = ({ onSuccess, embedded = false }: DiscordLoginPanelPro
             'Authorization': `Bearer ${anonKey}`,
             'apikey': anonKey,
           },
-          body: JSON.stringify({ action: 'send_otp', discord_username: username.trim() }),
+          body: JSON.stringify({ action: 'send_otp', discord_username: username.trim().toLowerCase() }),
         }
       );
 
