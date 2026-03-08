@@ -703,14 +703,16 @@ function AccountsView() {
 
       const accs: UserAccount[] = [];
       for (const u of users) {
-        const [claimRes, reqRes] = await Promise.all([
+        const [claimRes, reqRes, pointsRes] = await Promise.all([
           supabase.from('redemptions').select('id', { count: 'exact', head: true }).eq('discord', u.discord_username),
           supabase.from('replacement_requests').select('id', { count: 'exact', head: true }).eq('discord_username', u.discord_username),
+          supabase.from('user_points').select('points').eq('discord_username', u.discord_username).single(),
         ]);
         accs.push({
           discord_username: u.discord_username,
           claimCount: claimRes.count ?? 0,
           requestCount: reqRes.count ?? 0,
+          points: pointsRes.data?.points ?? 0,
           claims: [],
         });
       }
