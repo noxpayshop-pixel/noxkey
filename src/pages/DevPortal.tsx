@@ -122,6 +122,10 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             className={tab === 'gifts' ? 'text-primary' : 'text-muted-foreground'}>
             <Package className="w-4 h-4 mr-1" /> Gifts
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setTab('casino')}
+            className={tab === 'casino' ? 'text-primary' : 'text-muted-foreground'}>
+            <Coins className="w-4 h-4 mr-1" /> Casino
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setTab('settings')}
             className={tab === 'settings' ? 'text-primary' : 'text-muted-foreground'}>
             <Settings className="w-4 h-4 mr-1" /> Settings

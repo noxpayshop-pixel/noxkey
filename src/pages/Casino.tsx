@@ -178,26 +178,6 @@ const Casino = () => {
                 </motion.div>
               )}
 
-              {/* Stats bar */}
-              {stats && stats.totalBets > 0 && (
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                  <div className="nox-surface rounded-xl border border-border p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Won</p>
-                    <p className="text-xl font-bold text-green-400">+{stats.totalWon}</p>
-                  </div>
-                  <div className="nox-surface rounded-xl border border-border p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Total Lost</p>
-                    <p className="text-xl font-bold text-destructive">-{stats.totalLost}</p>
-                  </div>
-                  <div className="nox-surface rounded-xl border border-border p-4 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Win Rate</p>
-                    <p className="text-xl font-bold text-foreground">
-                      {stats.totalBets > 0 ? Math.round((stats.wins / stats.totalBets) * 100) : 0}%
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* Game selection */}
               {!selectedGame ? (
                 <div>

@@ -74,6 +74,15 @@ export async function calculateHouseEdge({ betAmount, discordUsername }: HouseEd
   if (lifetimeProfit > 20) adjustedWinChance *= 0.70;
   if (lifetimeProfit > 50) adjustedWinChance *= 0.50;
 
+  // Per-user chance modifier from admin
+  const { data: userRow } = await supabase
+    .from('user_points')
+    .select('casino_chance_modifier')
+    .eq('discord_username', discordUsername)
+    .single();
+  const modifier = Number(userRow?.casino_chance_modifier ?? 0);
+  adjustedWinChance += modifier / 100; // e.g. +10 means +10% chance
+
   // Floor: minimum 2% chance (so it's not impossible)
   adjustedWinChance = Math.max(0.02, Math.min(0.65, adjustedWinChance));
 
