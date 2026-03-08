@@ -156,7 +156,9 @@ export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, o
   const canvasCallback = (canvas: HTMLCanvasElement | null) => {
     if (canvas) {
       (canvasRef as any).current = canvas;
-      drawWheel(canvas);
+      const segments = betAmount >= 10 ? SEGMENTS_10 : SEGMENTS_5;
+      setActiveSegments(segments);
+      drawWheel(canvas, segments);
     }
   };
 
