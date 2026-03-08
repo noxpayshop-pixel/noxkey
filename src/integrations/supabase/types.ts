@@ -153,6 +153,56 @@ export type Database = {
           },
         ]
       }
+      replacement_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string | null
+          discord_username: string
+          id: string
+          problem_description: string
+          problem_screenshot_url: string | null
+          product_id: string
+          redeem_code: string
+          resolved_at: string | null
+          status: string
+          vouch_screenshot_url: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string | null
+          discord_username: string
+          id?: string
+          problem_description: string
+          problem_screenshot_url?: string | null
+          product_id: string
+          redeem_code: string
+          resolved_at?: string | null
+          status?: string
+          vouch_screenshot_url?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string | null
+          discord_username?: string
+          id?: string
+          problem_description?: string
+          problem_screenshot_url?: string | null
+          product_id?: string
+          redeem_code?: string
+          resolved_at?: string | null
+          status?: string
+          vouch_screenshot_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "replacement_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_items: {
         Row: {
           created_at: string | null
