@@ -104,39 +104,40 @@ const TrustSection = () => {
           </motion.div>
         )}
 
-        {/* Vouch Platforms */}
-        {platforms.length > 0 && (
-          <motion.div
-            className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Check our platforms to see all our verified vouches and reviews.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {platforms.map((platform, i) => (
-                  <a
-                    key={i}
-                    href={platform.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    {platform.name} →
-                  </a>
-                ))}
-              </div>
+        {/* Vouch CTA - always visible */}
+        <motion.div
+          className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">No Vouch = No Warranty</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Check our verified vouches for proof of legitimacy.
+              </p>
             </div>
-          </motion.div>
-        )}
+            <div className="flex flex-wrap items-center gap-3">
+              {platforms.map((platform, i) => (
+                <a
+                  key={i}
+                  href={platform.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-accent transition-colors whitespace-nowrap"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  {platform.name} →
+                </a>
+              ))}
+              {platforms.length === 0 && (
+                <span className="text-muted-foreground/50 text-sm">No platforms configured</span>
+              )}
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Lightbox */}
