@@ -14,7 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      redeem_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          is_redeemed: boolean | null
+          product_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          product_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          is_redeemed?: boolean | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redeem_codes_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      redemptions: {
+        Row: {
+          code: string
+          created_at: string | null
+          delivered_item: string | null
+          discord: string
+          email: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          delivered_item?: string | null
+          discord: string
+          email: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          delivered_item?: string | null
+          discord?: string
+          email?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "redemptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_claimed: boolean | null
+          item: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_claimed?: boolean | null
+          item: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_claimed?: boolean | null
+          item?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waitlist: {
+        Row: {
+          created_at: string | null
+          discord: string
+          email: string
+          fulfilled_item: string | null
+          id: string
+          is_fulfilled: boolean | null
+          product_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          discord: string
+          email: string
+          fulfilled_item?: string | null
+          id?: string
+          is_fulfilled?: boolean | null
+          product_id: string
+        }
+        Update: {
+          created_at?: string | null
+          discord?: string
+          email?: string
+          fulfilled_item?: string | null
+          id?: string
+          is_fulfilled?: boolean | null
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waitlist_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
