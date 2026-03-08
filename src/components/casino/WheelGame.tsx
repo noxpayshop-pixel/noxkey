@@ -17,24 +17,24 @@ interface Props {
 
 interface Segment {
   label: string;
-  multiplier: number;
+  amount: number; // fixed point payout (0 = lose)
   color: string;
   textColor: string;
 }
 
 const SEGMENTS: Segment[] = [
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '1.5x', multiplier: 1.5, color: 'hsl(var(--primary))', textColor: '#fff' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '0.5x', multiplier: 0.5, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '2x', multiplier: 2, color: '#22c55e', textColor: '#fff' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '1x', multiplier: 1, color: 'hsl(var(--accent))', textColor: '#fff' },
-  { label: '3x', multiplier: 3, color: '#eab308', textColor: '#000' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
-  { label: '0.5x', multiplier: 0.5, color: 'hsl(var(--muted))', textColor: '#fff' },
-  { label: '5x', multiplier: 5, color: '#f59e0b', textColor: '#000' },
-  { label: '0x', multiplier: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+3', amount: 3, color: 'hsl(var(--primary))', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
+  { label: '+8', amount: 8, color: '#22c55e', textColor: '#fff' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+2', amount: 2, color: 'hsl(var(--accent))', textColor: '#fff' },
+  { label: '+15', amount: 15, color: '#eab308', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
+  { label: '+1', amount: 1, color: 'hsl(var(--muted))', textColor: '#fff' },
+  { label: '+25', amount: 25, color: '#f59e0b', textColor: '#000' },
+  { label: '0', amount: 0, color: 'hsl(var(--destructive))', textColor: '#fff' },
 ];
 
 export default function WheelGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
