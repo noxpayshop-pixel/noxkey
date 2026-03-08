@@ -703,4 +703,215 @@ function AccountsView() {
   );
 }
 
+// ---- Vouches View ----
+function VouchesView() {
+  const [vouches, setVouches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState<string | null>(null);
+
+  const fetchVouches = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('vouch_submissions').select('*').order('created_at', { ascending: true });
+    setVouches(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchVouches(); }, []);
+
+  const handleDecision = async (id: string, discordUsername: string, status: 'approved' | 'denied') => {
+    setProcessing(id);
+    await supabase.from('vouch_submissions').update({ status, resolved_at: new Date().toISOString() }).eq('id', id);
+
+    if (status === 'approved') {
+      // Award 3 points
+      const { data: existing } = await supabase.from('user_points').select('points').eq('discord_username', discordUsername).single();
+      if (existing) {
+        await supabase.from('user_points').update({ points: existing.points + 3, updated_at: new Date().toISOString() }).eq('discord_username', discordUsername);
+      } else {
+        await supabase.from('user_points').insert({ discord_username: discordUsername, points: 3 });
+      }
+      await supabase.from('point_transactions').insert({
+        discord_username: discordUsername, amount: 3, type: 'vouch',
+        description: 'Approved vouch submission',
+      });
+    }
+
+    toast.success(`Vouch ${status}`);
+    fetchVouches();
+    setProcessing(null);
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  const pending = vouches.filter(v => v.status === 'pending');
+  const resolved = vouches.filter(v => v.status !== 'pending');
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <Star className="w-5 h-5 text-primary" /> Vouch Approvals
+      </h2>
+
+      {pending.length > 0 ? (
+        <div className="space-y-3 mb-6">
+          <p className="text-sm text-muted-foreground">Pending ({pending.length})</p>
+          {pending.map(v => (
+            <div key={v.id} className="nox-surface border border-primary/30 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-foreground font-medium">@{v.discord_username}</span>
+                  <span className="text-muted-foreground text-sm ml-2">· {v.platform}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+              </div>
+              <a href={v.screenshot_url} target="_blank" rel="noopener noreferrer">
+                <img src={v.screenshot_url} alt="Vouch" className="rounded-xl border border-border max-h-48 object-contain w-full hover:opacity-80 transition-opacity" />
+              </a>
+              <div className="flex gap-2">
+                <Button variant="nox" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'approved')} disabled={processing === v.id}>
+                  <CheckCircle2 className="w-4 h-4 mr-1" /> Approve (+3 pts)
+                </Button>
+                <Button variant="destructive" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'denied')} disabled={processing === v.id}>
+                  <XCircle className="w-4 h-4 mr-1" /> Deny
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-center py-8 mb-6">No pending vouches.</p>
+      )}
+
+      {resolved.length > 0 && (
+        <div>
+          <p className="text-sm text-muted-foreground mb-2">Resolved ({resolved.length})</p>
+          <div className="space-y-2">
+            {resolved.map(v => (
+              <div key={v.id} className="nox-surface border border-border rounded-xl p-3 text-sm flex items-center justify-between opacity-60">
+                <div className="flex items-center gap-2">
+                  <span className={v.status === 'approved' ? 'text-green-400' : 'text-destructive'}>{v.status}</span>
+                  <span className="text-foreground">@{v.discord_username}</span>
+                  <span className="text-muted-foreground">· {v.platform}</span>
+                </div>
+                <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Gifts View ----
+function GiftsView() {
+  const [gifts, setGifts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState('');
+  const [newPrice, setNewPrice] = useState('10');
+  const [newDesc, setNewDesc] = useState('');
+  const [selectedGift, setSelectedGift] = useState<any | null>(null);
+  const [stockInput, setStockInput] = useState('');
+
+  const fetchGifts = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('gift_items').select('*').order('created_at', { ascending: false });
+    setGifts(data ?? []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchGifts(); }, []);
+
+  const addGift = async () => {
+    if (!newName.trim()) return;
+    await supabase.from('gift_items').insert({ name: newName.trim(), description: newDesc, point_price: parseInt(newPrice) || 10 });
+    setNewName(''); setNewDesc(''); setNewPrice('10');
+    fetchGifts();
+    toast.success('Gift item added');
+  };
+
+  const deleteGift = async (id: string) => {
+    await supabase.from('gift_items').delete().eq('id', id);
+    fetchGifts();
+    toast.success('Gift item deleted');
+  };
+
+  const saveStock = async () => {
+    if (!selectedGift) return;
+    const items = stockInput.split('\n').map(s => s.trim()).filter(Boolean);
+    await supabase.from('gift_items').update({ stock: items }).eq('id', selectedGift.id);
+    toast.success(`${items.length} stock items saved`);
+    fetchGifts();
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+
+  if (selectedGift) {
+    return (
+      <div className="space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => setSelectedGift(null)}>
+          <ChevronLeft className="w-4 h-4 mr-1" /> Back to Gifts
+        </Button>
+        <h2 className="text-xl font-bold text-foreground">{selectedGift.name}</h2>
+        <p className="text-sm text-muted-foreground">Point Price: <span className="text-primary font-bold">{selectedGift.point_price}</span></p>
+        <div>
+          <label className="text-sm text-muted-foreground mb-1 block">Gift Stock (one per line)</label>
+          <Textarea
+            value={stockInput}
+            onChange={(e) => setStockInput(e.target.value)}
+            placeholder="Enter gift items, one per line..."
+            className="bg-card border-border text-foreground placeholder:text-muted-foreground min-h-[150px] font-mono text-sm"
+          />
+          <div className="flex items-center justify-between mt-2">
+            <p className="text-xs text-muted-foreground">{stockInput.split('\n').filter(s => s.trim()).length} items</p>
+            <Button variant="noxOutline" size="sm" onClick={saveStock}>Save Stock</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+        <Gift className="w-5 h-5 text-primary" /> Gift Items (Free Products)
+      </h2>
+
+      <div className="nox-surface rounded-xl border border-border p-4 mb-6 space-y-3">
+        <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Gift name..."
+          className="bg-background border-border text-foreground placeholder:text-muted-foreground" />
+        <Input value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Description (optional)"
+          className="bg-background border-border text-foreground placeholder:text-muted-foreground" />
+        <div className="flex gap-3">
+          <div className="flex items-center gap-2">
+            <Coins className="w-4 h-4 text-primary" />
+            <Input value={newPrice} onChange={(e) => setNewPrice(e.target.value)} type="number" min="1"
+              className="w-24 bg-background border-border text-foreground" placeholder="Points" />
+          </div>
+          <Button variant="nox" onClick={addGift} className="flex-1"><Plus className="w-4 h-4 mr-1" /> Add Gift</Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {gifts.map(g => (
+          <div key={g.id}
+            className="nox-surface border border-border rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-primary/30 transition-colors"
+            onClick={() => { setSelectedGift(g); setStockInput((g.stock || []).join('\n')); }}>
+            <div>
+              <p className="font-semibold text-foreground">{g.name}</p>
+              <p className="text-xs text-muted-foreground">
+                <Coins className="w-3 h-3 inline mr-1" />{g.point_price} pts · {(g.stock || []).length} in stock
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteGift(g.id); }}>
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          </div>
+        ))}
+        {gifts.length === 0 && <p className="text-muted-foreground text-center py-8">No gift items yet.</p>}
+      </div>
+    </div>
+  );
+}
+
 export default DevPortal;
