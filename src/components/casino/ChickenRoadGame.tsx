@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Car, Bird } from 'lucide-react';
+import { Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
@@ -18,10 +20,10 @@ const COLS = 4;
 const MULTIPLIERS = [1.2, 1.4, 1.65, 1.95, 2.3, 2.7, 3.2, 3.8, 4.5, 5.3];
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-
 const DIFFICULTY_CARS: Record<Difficulty, number> = { easy: 1, medium: 1, hard: 2 };
 
 export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [gameActive, setGameActive] = useState(false);
   const [currentRow, setCurrentRow] = useState(-1);
@@ -30,6 +32,7 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
   const [hitCar, setHitCar] = useState(false);
   const [cashedOut, setCashedOut] = useState(false);
   const [currentMult, setCurrentMult] = useState(1.0);
+  const [maxSafeRows, setMaxSafeRows] = useState(999);
 
   const startGame = useCallback(async () => {
     const carsPerRow = DIFFICULTY_CARS[difficulty];
@@ -47,9 +50,22 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
     setHitCar(false);
     setCashedOut(false);
     setCurrentMult(1.0);
+
+    // Pre-determine max safe rows
+    if (discordUsername) {
+      const { shouldWin, adjustedWinChance } = await getRiggedOutcome({
+        betAmount, currentPoints: points, discordUsername,
+      });
+      if (!shouldWin) {
+        setMaxSafeRows(Math.floor(Math.random() * 3)); // 0-2 safe rows then forced hit
+      } else {
+        setMaxSafeRows(Math.max(3, Math.floor(ROWS * (0.3 + adjustedWinChance * 0.5))));
+      }
+    }
+
     await onDeduct();
     setGameActive(true);
-  }, [difficulty, onDeduct]);
+  }, [difficulty, onDeduct, discordUsername, betAmount, points]);
 
   const handleTileClick = async (col: number) => {
     if (!gameActive || hitCar || currentRow >= ROWS) return;
@@ -58,7 +74,17 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
     newRevealed.set(currentRow, col);
     setRevealedRows(newRevealed);
 
-    if (carPositions[currentRow]?.includes(col)) {
+    // If exceeded max safe rows, force a car hit
+    let isCarHit = carPositions[currentRow]?.includes(col);
+    if (currentRow >= maxSafeRows && !isCarHit) {
+      // Secretly place a car on this tile
+      const newCars = [...carPositions];
+      newCars[currentRow] = [...newCars[currentRow], col];
+      setCarPositions(newCars);
+      isCarHit = true;
+    }
+
+    if (isCarHit) {
       setHitCar(true);
       setGameActive(false);
       await onComplete(false, 0);
@@ -91,7 +117,6 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Game Area */}
       <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col items-center">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-2xl">🐔</span>
@@ -157,7 +182,6 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
           }).reverse().reverse()}
         </div>
 
-        {/* Dashed start line */}
         <div className="w-full max-w-[500px] mt-2 border-t border-dashed border-muted-foreground/20 flex justify-between px-12 pt-1">
           <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Start</span>
           <span className="text-[10px] text-muted-foreground/40 uppercase tracking-wider">Start</span>
@@ -174,7 +198,6 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
         )}
       </div>
 
-      {/* Controls Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -248,7 +271,6 @@ export default function ChickenRoadGame({ points, betAmount, setBetAmount, onDed
           )}
         </div>
 
-        {/* Session History */}
         <div className="nox-surface rounded-2xl border border-border p-5">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
           <div className="space-y-1.5 max-h-[200px] overflow-y-auto">

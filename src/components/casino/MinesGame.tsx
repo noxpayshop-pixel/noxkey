@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Bomb, Gem } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
@@ -17,6 +19,7 @@ const GRID_SIZE = 5;
 const TOTAL_TILES = GRID_SIZE * GRID_SIZE;
 
 export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [mineCount, setMineCount] = useState(5);
   const [gameActive, setGameActive] = useState(false);
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
@@ -26,6 +29,7 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
   const [currentMult, setCurrentMult] = useState(1.0);
   const [payout, setPayout] = useState(0);
   const [lockedBet, setLockedBet] = useState(0);
+  const [maxSafeTiles, setMaxSafeTiles] = useState(999);
 
   const startGame = useCallback(async () => {
     const minePositions = new Set<number>();
@@ -39,12 +43,36 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
     setCurrentMult(1.0);
     setPayout(0);
     setLockedBet(betAmount);
+
+    // Pre-determine max safe tiles using house edge
+    if (discordUsername) {
+      const { shouldWin, adjustedWinChance } = await getRiggedOutcome({
+        betAmount, currentPoints: points, discordUsername,
+      });
+      if (!shouldWin) {
+        // Player will lose — allow 0-3 safe tiles before forced mine
+        setMaxSafeTiles(Math.floor(Math.random() * 4));
+      } else {
+        // Player can win — allow reasonable tiles
+        const safeTiles = TOTAL_TILES - mineCount;
+        setMaxSafeTiles(Math.max(2, Math.floor(safeTiles * (0.3 + adjustedWinChance * 0.5))));
+      }
+    }
+
     await onDeduct();
     setGameActive(true);
-  }, [mineCount, betAmount, onDeduct]);
+  }, [mineCount, betAmount, onDeduct, discordUsername, points]);
 
   const handleTileClick = async (index: number) => {
     if (!gameActive || revealed.has(index) || hitMine !== null) return;
+
+    // If player exceeded max safe tiles, force a mine hit
+    if (revealed.size >= maxSafeTiles && !mines.has(index)) {
+      // Secretly move a mine to this tile
+      const newMines = new Set(mines);
+      newMines.add(index);
+      setMines(newMines);
+    }
 
     if (mines.has(index)) {
       setHitMine(index);
@@ -212,7 +240,6 @@ export default function MinesGame({ points, betAmount, setBetAmount, onDeduct, o
           )}
         </div>
 
-        {/* Session History */}
         <div className="nox-surface rounded-2xl border border-border p-5">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
           <div className="space-y-1.5 max-h-[200px] overflow-y-auto">

@@ -1,13 +1,16 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Loader2, Droplets } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
   betAmount: number;
   setBetAmount: (n: number) => void;
-  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  onDeduct: () => Promise<void>;
+  onComplete: (won: boolean, payout: number) => Promise<void>;
   playing: boolean;
   sessionHistory: Array<{ won: boolean; amount: number }>;
 }
@@ -19,19 +22,23 @@ const COLORS = [
   { bg: 'bg-yellow-500', text: 'text-yellow-500', glow: 'shadow-yellow-500/30', label: 'Gold', mult: 10 },
 ];
 
-export default function SplatGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
+export default function SplatGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [chosenColor, setChosenColor] = useState(0);
   const [splatResult, setSplatResult] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
   const [won, setWon] = useState<boolean | null>(null);
   const [splatPositions, setSplatPositions] = useState<Array<{ x: number; y: number; color: number; size: number }>>([]);
+  const [lockedBet, setLockedBet] = useState(0);
 
   const handlePlay = async () => {
     setAnimating(true);
     setSplatResult(null);
     setWon(null);
+    setLockedBet(betAmount);
 
-    // Generate random splat positions for animation
+    await onDeduct();
+
     const positions = Array.from({ length: 12 }, () => ({
       x: 10 + Math.random() * 80,
       y: 10 + Math.random() * 80,
@@ -42,21 +49,42 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
 
     await new Promise(r => setTimeout(r, 1200));
 
-    // Determine winning color (weighted: purple most likely, gold least)
-    const weights = [50, 30, 15, 5]; // Purple, Blue, Green, Gold
-    const totalWeight = weights.reduce((a, b) => a + b);
-    let rand = Math.random() * totalWeight;
-    let resultColor = 0;
-    for (let i = 0; i < weights.length; i++) {
-      rand -= weights[i];
-      if (rand <= 0) { resultColor = i; break; }
+    let resultColor: number;
+    if (discordUsername) {
+      const { shouldWin } = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
+      if (shouldWin) {
+        resultColor = chosenColor;
+      } else {
+        // Pick any color EXCEPT the chosen one
+        const others = [0, 1, 2, 3].filter(c => c !== chosenColor);
+        // Weighted toward lower multiplier colors
+        const weights = others.map(c => Math.max(1, 10 - COLORS[c].mult));
+        const totalW = weights.reduce((a, b) => a + b);
+        let rand = Math.random() * totalW;
+        resultColor = others[0];
+        for (let i = 0; i < weights.length; i++) {
+          rand -= weights[i];
+          if (rand <= 0) { resultColor = others[i]; break; }
+        }
+      }
+    } else {
+      const weights = [50, 30, 15, 5];
+      const totalWeight = weights.reduce((a, b) => a + b);
+      let rand = Math.random() * totalWeight;
+      resultColor = 0;
+      for (let i = 0; i < weights.length; i++) {
+        rand -= weights[i];
+        if (rand <= 0) { resultColor = i; break; }
+      }
     }
 
     setSplatResult(resultColor);
     const isWin = resultColor === chosenColor;
     setWon(isWin);
     setAnimating(false);
-    await onPlay();
+
+    const payout = isWin ? Math.floor(betAmount * COLORS[chosenColor].mult) : 0;
+    await onComplete(isWin, payout);
   };
 
   const presets = [1, 5, 10, 25, 50];
@@ -69,7 +97,6 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
         </h2>
         <p className="text-xs text-muted-foreground mb-8">Pick a color, watch the splat</p>
 
-        {/* Splat arena */}
         <div className="relative w-full max-w-[400px] aspect-square rounded-2xl bg-background border border-border overflow-hidden">
           <AnimatePresence>
             {animating && splatPositions.map((pos, i) => (
@@ -91,7 +118,6 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
             ))}
           </AnimatePresence>
 
-          {/* Result splat */}
           {splatResult !== null && !animating && (
             <motion.div
               initial={{ scale: 0 }}
@@ -117,16 +143,14 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
           )}
         </div>
 
-        {/* Result message */}
         {won !== null && (
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             className={`mt-6 text-xl font-black ${won ? 'text-green-400' : 'text-destructive'}`}>
-            {won ? `WIN! +${betAmount * COLORS[chosenColor].mult} ✨` : `MISS! -${betAmount}`}
+            {won ? `WIN! +${lockedBet * COLORS[chosenColor].mult} ✨` : `MISS! -${lockedBet}`}
           </motion.p>
         )}
       </div>
 
-      {/* Controls */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -151,7 +175,6 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
             </div>
           </div>
 
-          {/* Color picker */}
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Pick Color</label>
             <div className="grid grid-cols-2 gap-2">
@@ -178,6 +201,24 @@ export default function SplatGame({ points, betAmount, setBetAmount, onPlay, pla
             onClick={handlePlay}>
             {animating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'SPLAT!'}
           </Button>
+        </div>
+
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

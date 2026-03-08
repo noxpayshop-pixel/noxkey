@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Coins } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { calculateHouseEdge } from '@/lib/casino';
+import { getRiggedOutcome } from '@/lib/casino';
 import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
@@ -53,7 +53,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     const gw = w - padding.left - padding.right;
     const gh = h - padding.top - padding.bottom;
 
-    // Grid lines
     ctx.strokeStyle = 'hsla(0, 0%, 100%, 0.06)';
     ctx.lineWidth = 1;
     const steps = [1, 1.5, 2, 2.5, 3, 4, 5].filter(s => s <= maxMult + 0.5);
@@ -71,13 +70,11 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
       ctx.fillText(`${s.toFixed(1)}x`, padding.left - 6, y + 4);
     }
 
-    // Main line
     const getPoint = (i: number, val: number) => ({
       x: padding.left + (i / Math.max(data.length - 1, 1)) * gw,
       y: padding.top + gh - ((val - 1) / (maxMult - 1)) * gh,
     });
 
-    // Fill area
     ctx.beginPath();
     data.forEach((val, i) => {
       const p = getPoint(i, val);
@@ -94,7 +91,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Line stroke
     ctx.beginPath();
     ctx.strokeStyle = state === 'crashed' ? 'hsl(0, 72%, 51%)' : 'hsl(142, 76%, 36%)';
     ctx.lineWidth = 3;
@@ -107,7 +103,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     });
     ctx.stroke();
 
-    // Dot at end
     const endP = getPoint(data.length - 1, data[data.length - 1]);
     ctx.beginPath();
     ctx.arc(endP.x, endP.y, 5, 0, Math.PI * 2);
@@ -117,12 +112,10 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Cashout marker
     if (cashoutAt && state === 'cashed') {
       const cIdx = data.findIndex(d => d >= cashoutAt);
       if (cIdx >= 0) {
         const cp = getPoint(cIdx, cashoutAt);
-        // Dashed horizontal line
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = 'hsla(142, 76%, 36%, 0.5)';
         ctx.lineWidth = 1.5;
@@ -131,12 +124,10 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
         ctx.lineTo(w - padding.right, cp.y);
         ctx.stroke();
         ctx.setLineDash([]);
-        // Label
         ctx.fillStyle = 'hsl(142, 76%, 36%)';
         ctx.font = 'bold 12px monospace';
         ctx.textAlign = 'left';
         ctx.fillText(`${cashoutAt.toFixed(2)}x`, cp.x + 10, cp.y - 8);
-        // Circle
         ctx.beginPath();
         ctx.arc(cp.x, cp.y, 6, 0, Math.PI * 2);
         ctx.fillStyle = 'hsl(142, 76%, 36%)';
@@ -147,10 +138,8 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
       }
     }
 
-    // Crash marker
     if (state === 'crashed' || (state === 'cashed' && crashRef.current > 0)) {
       const cPoint = crashRef.current || data[data.length - 1];
-      // Dashed vertical red line at crash
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = 'hsla(0, 72%, 51%, 0.6)';
       ctx.lineWidth = 1.5;
@@ -173,14 +162,21 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
       setLockedBet(betAmount);
       await onDeduct();
 
-      // Calculate crash point using house edge
+      // Use rigged outcome to determine crash point
       let crash = 1.1 + Math.random() * 4;
       if (discordUsername) {
-        const edge = await calculateHouseEdge({ betAmount, discordUsername });
-        // Lower adjusted chance = earlier crash
-        crash = 1 + (edge.adjustedWinChance * 5) + Math.random() * 2;
+        const { shouldWin, adjustedWinChance } = await getRiggedOutcome({
+          betAmount, currentPoints: points, discordUsername,
+        });
+        if (!shouldWin) {
+          // Crash very early — between 1.0 and 1.5
+          crash = 1.0 + Math.random() * 0.5;
+        } else {
+          // Allow some room — based on chance
+          crash = 1.2 + adjustedWinChance * 4 + Math.random() * 2;
+        }
       }
-      crash = parseFloat(crash.toFixed(2));
+      crash = parseFloat(Math.max(1.01, crash).toFixed(2));
       setCrashPoint(crash);
       crashRef.current = crash;
       setMultiplier(1.0);
@@ -208,7 +204,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     }
   };
 
-  // Handle crash → complete as loss
   useEffect(() => {
     if (gameState === 'crashed') {
       onComplete(false, 0);
@@ -230,7 +225,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 
-  // Redraw graph on every tick
   useEffect(() => {
     drawGraph(dataRef.current, gameState, cashoutMult || undefined);
   }, [multiplier, gameState, drawGraph, cashoutMult]);
@@ -246,7 +240,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Game Area */}
       <div className="nox-surface rounded-2xl border border-border p-6 flex flex-col min-h-[550px]">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-2xl">📈</span>
@@ -254,7 +247,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
         </div>
         <p className="text-xs text-muted-foreground mb-4">Cash out before the rocket crashes!</p>
 
-        {/* Multiplier Display */}
         <div className="flex-1 flex flex-col items-center justify-center relative">
           <motion.div
             animate={{ scale: isRunning ? [1, 1.03, 1] : 1 }}
@@ -281,7 +273,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
           )}
         </div>
 
-        {/* Graph */}
         <div className="w-full h-[200px] relative rounded-xl bg-background/50 border border-border overflow-hidden mt-auto">
           <canvas ref={canvasRef} className="w-full h-full" />
           {gameState === 'idle' && cashoutMult === 0 && (
@@ -292,7 +283,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
         </div>
       </div>
 
-      {/* Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -332,7 +322,6 @@ export default function CrashGame({ points, betAmount, setBetAmount, onDeduct, o
           )}
         </div>
 
-        {/* Session History */}
         <div className="nox-surface rounded-2xl border border-border p-5">
           <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
           <div className="space-y-1.5 max-h-[200px] overflow-y-auto">

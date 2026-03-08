@@ -1,44 +1,59 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coins, Loader2, Trophy, TrendingDown } from 'lucide-react';
+import { Coins, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getRiggedOutcome } from '@/lib/casino';
+import { useDiscordAuth } from '@/contexts/DiscordAuthContext';
 
 interface Props {
   points: number;
   betAmount: number;
   setBetAmount: (n: number) => void;
-  onPlay: () => Promise<{ won: boolean; payout: number; winStreak: number }>;
+  onDeduct: () => Promise<void>;
+  onComplete: (won: boolean, payout: number) => Promise<void>;
   playing: boolean;
   sessionHistory: Array<{ won: boolean; amount: number }>;
 }
 
-export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, playing, sessionHistory }: Props) {
+export default function CoinFlipGame({ points, betAmount, setBetAmount, onDeduct, onComplete, playing, sessionHistory }: Props) {
+  const { discordUsername } = useDiscordAuth();
   const [result, setResult] = useState<{ won: boolean; payout: number } | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [side, setSide] = useState<'heads' | 'tails'>('heads');
   const [chosenSide, setChosenSide] = useState<'heads' | 'tails'>('heads');
+  const [lockedBet, setLockedBet] = useState(0);
 
   const handlePlay = async () => {
     setResult(null);
     setFlipping(true);
-    const res = await onPlay();
-    // Animate coin for a moment
+    setLockedBet(betAmount);
+
+    await onDeduct();
+
+    // Determine outcome via house edge
+    let won = Math.random() < 0.5;
+    if (discordUsername) {
+      const outcome = await getRiggedOutcome({ betAmount, currentPoints: points, discordUsername });
+      won = outcome.shouldWin;
+    }
+
     await new Promise(r => setTimeout(r, 600));
-    setSide(res.won ? chosenSide : (chosenSide === 'heads' ? 'tails' : 'heads'));
+    setSide(won ? chosenSide : (chosenSide === 'heads' ? 'tails' : 'heads'));
     setFlipping(false);
-    setResult({ won: res.won, payout: res.payout });
+
+    const payout = won ? betAmount * 2 : 0;
+    setResult({ won, payout });
+    await onComplete(won, payout);
   };
 
   const presets = [1, 5, 10, 25, 50];
 
   return (
     <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-      {/* Game Area */}
       <div className="nox-surface rounded-2xl border border-border p-8 flex flex-col items-center justify-center min-h-[500px]">
         <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-2">Coin Flip</h2>
         <p className="text-xs text-muted-foreground mb-12">Pick a side, double your bet</p>
 
-        {/* Coin */}
         <div className="relative mb-12">
           <motion.div
             animate={flipping ? { rotateY: [0, 1800], scale: [1, 1.3, 1] } : { rotateY: 0 }}
@@ -58,7 +73,6 @@ export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, 
           )}
         </div>
 
-        {/* Result */}
         <AnimatePresence>
           {result && !flipping && (
             <motion.div
@@ -68,13 +82,12 @@ export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, 
             >
               <p className="text-2xl font-black">{result.won ? 'YOU WIN!' : 'YOU LOSE'}</p>
               <p className="text-sm font-bold mt-1">
-                {result.won ? `+${result.payout} points` : `-${betAmount} points`}
+                {result.won ? `+${result.payout} points` : `-${lockedBet} points`}
               </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Side selection */}
         {!flipping && !playing && (
           <div className="flex gap-4 mt-8">
             {(['heads', 'tails'] as const).map(s => (
@@ -95,7 +108,6 @@ export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, 
         )}
       </div>
 
-      {/* Controls Sidebar */}
       <div className="space-y-4">
         <div className="nox-surface rounded-2xl border border-border p-5">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-1">Current Balance</p>
@@ -108,16 +120,9 @@ export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, 
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-widest mb-2 block">Bet Amount</label>
             <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min={1}
-                  max={points}
-                  value={betAmount}
-                  onChange={(e) => setBetAmount(Math.max(1, Math.min(points, parseInt(e.target.value) || 1)))}
-                  className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground text-lg font-bold focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
+              <input type="number" min={1} max={points} value={betAmount}
+                onChange={(e) => setBetAmount(Math.max(1, Math.min(points, parseInt(e.target.value) || 1)))}
+                className="w-full px-4 py-3 bg-background border border-border rounded-xl text-foreground text-lg font-bold focus:outline-none focus:border-primary transition-colors" />
               <button onClick={() => setBetAmount(Math.max(1, Math.floor(betAmount / 2)))}
                 className="px-3 py-3 rounded-xl border border-border text-muted-foreground hover:border-primary/30 text-sm font-bold">½</button>
               <button onClick={() => setBetAmount(Math.min(betAmount * 2, points))}
@@ -140,6 +145,24 @@ export default function CoinFlipGame({ points, betAmount, setBetAmount, onPlay, 
             onClick={handlePlay}>
             {playing || flipping ? <Loader2 className="w-5 h-5 animate-spin" /> : 'FLIP'}
           </Button>
+        </div>
+
+        <div className="nox-surface rounded-2xl border border-border p-5">
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Session History</h3>
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+            {sessionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground/50 text-center py-4">No history yet</p>
+            ) : (
+              sessionHistory.map((h, i) => (
+                <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                  h.won ? 'bg-green-500/5 text-green-400' : 'bg-destructive/5 text-destructive'
+                }`}>
+                  <span className="font-medium">{h.won ? 'Win' : 'Loss'}</span>
+                  <span className="font-bold">{h.won ? '+' : ''}{h.amount}</span>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
