@@ -7,6 +7,7 @@ import { DiscordAuthProvider } from "@/contexts/DiscordAuthContext";
 import Index from "./pages/Index";
 import DevPortal from "./pages/DevPortal";
 import MyClaims from "./pages/MyClaims";
+import MyPoints from "./pages/MyPoints";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
