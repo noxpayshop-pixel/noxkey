@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
           const dmChannel = await dmRes.json()
 
           if (dmChannel.id) {
-            // Send embed message
+            // Send notification embed (NOT the item itself — user picks it up on the website)
             await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
               method: 'POST',
               headers: {
@@ -116,18 +116,18 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 embeds: [
                   {
-                    title: `🎉 Your ${product?.name || 'product'} is ready!`,
+                    title: `📦 Your ${product?.name || 'product'} is ready!`,
                     description: [
-                      'Your item from the waitlist has been delivered.',
+                      'Your item from the waitlist is now available!',
                       '',
-                      '**Your Item:**',
-                      `\`\`\`${item.item}\`\`\``,
-                      product?.description
-                        ? `\n**How to use:**\n${product.description}`
-                        : '',
+                      '🔗 **Pick it up here:**',
+                      'https://noxkey.lovable.app/myclaims',
+                      '',
+                      'Log in with your Discord to view your deliverables.',
                     ].join('\n'),
-                    color: 0x9333ea,
-                    footer: { text: 'The Nox — Auto Delivery' },
+                    color: 0x22c55e,
+                    footer: { text: 'The Nox — Premium Digital Delivery' },
+                    timestamp: new Date().toISOString(),
                   },
                 ],
               }),
