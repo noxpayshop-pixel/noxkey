@@ -65,7 +65,7 @@ const Casino = () => {
       getRecentActivity(discordUsername, 15),
       getUserStats(discordUsername),
     ]);
-    setPoints(pointsRes.data?.points ?? 0);
+    setPointsTracked(pointsRes.data?.points ?? 0);
     setRecentActivity(activity);
     setStats(userStats);
     const settings = getSettings();
