@@ -8,7 +8,7 @@ import DiscordLoginPanel from '@/components/DiscordLoginPanel';
 import { getSettings } from '@/lib/store';
 import {
   KeyRound, CheckCircle2, XCircle, AlertTriangle, Copy, LogOut, User,
-  MessageCircle, ArrowRight, ExternalLink, CheckCheck,
+  MessageCircle, ArrowRight, ExternalLink, CheckCheck, Gift, Coins,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
