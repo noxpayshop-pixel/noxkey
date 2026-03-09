@@ -9,6 +9,7 @@ import DevPortal from "./pages/DevPortal";
 import MyClaims from "./pages/MyClaims";
 import MyPoints from "./pages/MyPoints";
 import Casino from "./pages/Casino";
+import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
