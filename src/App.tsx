@@ -9,6 +9,7 @@ import DevPortal from "./pages/DevPortal";
 import MyClaims from "./pages/MyClaims";
 import MyPoints from "./pages/MyPoints";
 import Casino from "./pages/Casino";
+import Shop from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/myclaims" element={<MyClaims />} />
             <Route path="/mypoints" element={<MyPoints />} />
             <Route path="/casino" element={<Casino />} />
+            <Route path="/shop" element={<Shop />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

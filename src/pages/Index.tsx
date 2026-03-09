@@ -1,6 +1,7 @@
 import HeroSection from '@/components/HeroSection';
 import KeyRedeemPanel from '@/components/KeyRedeemPanel';
 import PromoSection from '@/components/PromoSection';
+import ShopPreview from '@/components/ShopPreview';
 import TrustSection from '@/components/TrustSection';
 import { Link } from 'react-router-dom';
 import { Lock, Heart } from 'lucide-react';
@@ -43,6 +44,9 @@ const Index = () => {
             <Link to="/mypoints" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
               Points
             </Link>
+            <Link to="/shop" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              Shop
+            </Link>
             <Link to="/casino" className="text-xs font-bold text-primary hover:text-accent transition-colors uppercase tracking-wider">
               Casino
             </Link>
@@ -64,6 +68,7 @@ const Index = () => {
         <KeyRedeemPanel />
       </section>
 
+      <ShopPreview />
       <PromoSection />
       <TrustSection />
 
