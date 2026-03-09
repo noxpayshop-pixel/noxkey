@@ -57,8 +57,7 @@ const Shop = () => {
       if (!res.ok) throw new Error(data.error || 'Failed to load products');
 
       const items: SellAuthProduct[] = data.data ?? data.products ?? (Array.isArray(data) ? data : []);
-      // Only show public/unlisted products
-      setProducts(items.filter(p => p.visibility !== 'private'));
+      setProducts(items);
     } catch (err: any) {
       setError(err.message || 'Failed to load products');
     } finally {
