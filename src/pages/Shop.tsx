@@ -1,21 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, ExternalLink, ArrowLeft, Loader2, AlertCircle, Package } from 'lucide-react';
+import { ShoppingBag, ExternalLink, Loader2, AlertCircle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import logo from '@/assets/logo.gif';
 
+interface SellAuthVariant {
+  id: number;
+  name: string;
+  price: string;
+  price_slash?: string;
+  stock: number;
+}
+
 interface SellAuthProduct {
   id: number;
-  title: string;
-  description: string;
-  price: number;
+  name: string;
+  path: string;
   currency: string;
-  slug: string;
-  image_url?: string;
-  stock?: number;
-  visibility?: string;
+  stock_count: number;
+  products_sold: number;
+  type: string;
+  visibility: string;
+  images: Array<{ url: string }>;
+  variants: SellAuthVariant[];
 }
 
 const Shop = () => {
@@ -47,9 +56,9 @@ const Shop = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load products');
 
-      // Handle both array and paginated response
-      const items = Array.isArray(data) ? data : (data.data ?? data.products ?? []);
-      setProducts(items);
+      const items: SellAuthProduct[] = data.data ?? data.products ?? (Array.isArray(data) ? data : []);
+      // Only show public/unlisted products
+      setProducts(items.filter(p => p.visibility !== 'private'));
     } catch (err: any) {
       setError(err.message || 'Failed to load products');
     } finally {
@@ -57,10 +66,28 @@ const Shop = () => {
     }
   };
 
+  const getPrice = (product: SellAuthProduct) => {
+    if (product.variants?.length > 0) {
+      return parseFloat(product.variants[0].price);
+    }
+    return 0;
+  };
+
+  const getSlashPrice = (product: SellAuthProduct) => {
+    if (product.variants?.length > 0 && product.variants[0].price_slash) {
+      return parseFloat(product.variants[0].price_slash);
+    }
+    return null;
+  };
+
+  const getImageUrl = (product: SellAuthProduct) => {
+    return product.images?.[0]?.url ?? null;
+  };
+
   const formatPrice = (price: number, currency: string) => {
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',
-      currency: currency || 'USD',
+      currency: currency || 'EUR',
     }).format(price);
   };
 
@@ -125,51 +152,63 @@ const Shop = () => {
 
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} className="group bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[var(--nox-shadow-sm)] overflow-hidden">
-                {product.image_url && (
-                  <div className="aspect-video w-full overflow-hidden bg-muted/30">
-                    <img
-                      src={product.image_url}
-                      alt={product.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-bold text-foreground line-clamp-2">
-                      {product.title}
-                    </CardTitle>
-                    <Badge variant="outline" className="shrink-0 border-primary/30 text-primary font-bold text-xs">
-                      {formatPrice(product.price, product.currency)}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-3">
-                  {product.description && (
-                    <p className="text-xs text-muted-foreground line-clamp-3">{product.description}</p>
+            {products.map((product) => {
+              const price = getPrice(product);
+              const slashPrice = getSlashPrice(product);
+              const imageUrl = getImageUrl(product);
+
+              return (
+                <Card key={product.id} className="group bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[var(--nox-shadow-sm)] overflow-hidden flex flex-col">
+                  {imageUrl && (
+                    <div className="aspect-video w-full overflow-hidden bg-muted/30">
+                      <img
+                        src={imageUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </div>
                   )}
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="nox"
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={() => {
-                      // Open SellAuth product page
-                      const shopId = import.meta.env.VITE_SELLAUTH_SHOP_SLUG;
-                      // Fallback: open generic SellAuth link
-                      window.open(`https://sellauth.com/product/${product.slug || product.id}`, '_blank');
-                    }}
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Purchase
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-bold text-foreground line-clamp-2">
+                        {product.name}
+                      </CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-3 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="border-primary/30 text-primary font-bold text-xs">
+                        {formatPrice(price, product.currency)}
+                      </Badge>
+                      {slashPrice && slashPrice > price && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          {formatPrice(slashPrice, product.currency)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                      <span>{product.stock_count} in stock</span>
+                      <span>·</span>
+                      <span>{product.products_sold} sold</span>
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      variant="nox"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => {
+                        window.open(`https://thenox.sellauth.com/product/${product.path}`, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Purchase
+                    </Button>
+                  </CardFooter>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

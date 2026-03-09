@@ -4,12 +4,18 @@ import { ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
+interface SellAuthVariant {
+  price: string;
+  price_slash?: string;
+}
+
 interface SellAuthProduct {
   id: number;
-  title: string;
-  price: number;
+  name: string;
   currency: string;
-  image_url?: string;
+  images: Array<{ url: string }>;
+  variants: SellAuthVariant[];
+  visibility: string;
 }
 
 const ShopPreview = () => {
@@ -27,8 +33,8 @@ const ShopPreview = () => {
         );
         const data = await res.json();
         if (res.ok) {
-          const items = Array.isArray(data) ? data : (data.data ?? data.products ?? []);
-          setProducts(items.slice(0, 3));
+          const items: SellAuthProduct[] = data.data ?? data.products ?? (Array.isArray(data) ? data : []);
+          setProducts(items.filter(p => p.visibility !== 'private').slice(0, 3));
         }
       } catch { /* silent */ }
       setLoading(false);
@@ -49,7 +55,7 @@ const ShopPreview = () => {
   if (products.length === 0) return null;
 
   const formatPrice = (price: number, currency: string) =>
-    new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency || 'USD' }).format(price);
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency || 'EUR' }).format(price);
 
   return (
     <section className="py-20 px-6 relative">
@@ -72,30 +78,35 @@ const ShopPreview = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {products.map((product) => (
-            <Link
-              key={product.id}
-              to="/shop"
-              className="group rounded-xl border border-border/50 bg-card/30 hover:border-primary/30 hover:bg-card/50 transition-all duration-300 overflow-hidden"
-            >
-              {product.image_url && (
-                <div className="aspect-[16/9] overflow-hidden bg-muted/20">
-                  <img
-                    src={product.image_url}
-                    alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
+          {products.map((product) => {
+            const price = product.variants?.[0] ? parseFloat(product.variants[0].price) : 0;
+            const imageUrl = product.images?.[0]?.url ?? null;
+
+            return (
+              <Link
+                key={product.id}
+                to="/shop"
+                className="group rounded-xl border border-border/50 bg-card/30 hover:border-primary/30 hover:bg-card/50 transition-all duration-300 overflow-hidden"
+              >
+                {imageUrl && (
+                  <div className="aspect-[16/9] overflow-hidden bg-muted/20">
+                    <img
+                      src={imageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div className="p-4 flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground truncate">{product.name}</span>
+                  <Badge variant="outline" className="shrink-0 border-primary/30 text-primary text-xs font-bold">
+                    {formatPrice(price, product.currency)}
+                  </Badge>
                 </div>
-              )}
-              <div className="p-4 flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-foreground truncate">{product.title}</span>
-                <Badge variant="outline" className="shrink-0 border-primary/30 text-primary text-xs font-bold">
-                  {formatPrice(product.price, product.currency)}
-                </Badge>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
