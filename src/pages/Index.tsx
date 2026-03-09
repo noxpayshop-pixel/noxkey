@@ -65,6 +65,7 @@ const Index = () => {
         <KeyRedeemPanel />
       </section>
 
+      <ShopPreview />
       <PromoSection />
       <TrustSection />
 
