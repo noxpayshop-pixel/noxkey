@@ -44,6 +44,9 @@ const Index = () => {
             <Link to="/mypoints" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
               Points
             </Link>
+            <Link to="/shop" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              Shop
+            </Link>
             <Link to="/casino" className="text-xs font-bold text-primary hover:text-accent transition-colors uppercase tracking-wider">
               Casino
             </Link>
