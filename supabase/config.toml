@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.sellauth-products]
 verify_jwt = false
+
+[functions.sellauth-checkout]
+verify_jwt = false
