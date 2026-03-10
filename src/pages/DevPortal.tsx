@@ -931,7 +931,7 @@ function VouchesView() {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=feedbacks`,
+        `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=feedbacks&all=true`,
         { headers: { 'Authorization': `Bearer ${anonKey}`, 'apikey': anonKey } }
       );
       const data = await res.json();
