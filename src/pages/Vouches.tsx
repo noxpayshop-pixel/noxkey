@@ -53,8 +53,7 @@ const Vouches = () => {
   const sellAuthUrl = settings.sellAuthFeedbackUrl || 'https://thenox.mysellauth.com/feedback';
   const discordVouchChannelUrl = settings.discordVouchChannelUrl || '';
 
-  const sellAuthVouches = vouches.filter(v => v.source === 'sellauth');
-  const manualVouches = vouches.filter(v => v.source === 'manual');
+  const allVouches = vouches;
 
   return (
     <div className="min-h-screen bg-background relative nox-noise">
