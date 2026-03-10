@@ -41,13 +41,20 @@ serve(async (req) => {
     if (fetchAll && path === 'feedbacks') {
       const allItems: any[] = [];
       let page = 1;
-      const maxPages = 50; // safety limit
+      const maxPages = 50;
 
       while (page <= maxPages) {
         const sellAuthUrl = `${SELLAUTH_BASE}/shops/${shopId}/${path}?page=${page}`;
         const response = await fetch(sellAuthUrl, { method: 'GET', headers });
 
-        if (!response.ok) break;
+        if (!response.ok) {
+          if (response.status === 429) {
+            // Rate limited - wait and retry
+            await new Promise(r => setTimeout(r, 3000));
+            continue;
+          }
+          break;
+        }
 
         const data = await response.json();
         const items = data.data ?? [];
@@ -56,13 +63,15 @@ serve(async (req) => {
 
         allItems.push(...items);
 
-        // Check if there are more pages
         const lastPage = data.meta?.last_page ?? data.last_page ?? 1;
         if (page >= lastPage) break;
         page++;
+
+        // Delay between pages to avoid rate limits
+        await new Promise(r => setTimeout(r, 800));
       }
 
-      return new Response(JSON.stringify({ data: allItems }), {
+      return new Response(JSON.stringify({ data: allItems, total: allItems.length }), {
         status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

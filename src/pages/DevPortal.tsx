@@ -937,26 +937,47 @@ function VouchesView() {
       const data = await res.json();
       if (res.ok) {
         const items = (data.data ?? []).filter((r: any) => r.status === 'published' && r.rating >= 4);
+        // Build set of existing display_dates for dedup
+        const existingDates = new Set(displayVouches.filter(v => v.source === 'sellauth').map(v => v.display_date));
         let imported = 0;
+        // Batch insert in chunks to avoid overwhelming the DB
+        const toInsert = [];
         for (const item of items) {
-          const msg = item.message || 'Automatic feedback after 7 days.';
-          // Check if already imported (by message + date combo)
-          const exists = displayVouches.some(v => v.message === msg && v.source === 'sellauth');
-          if (!exists) {
-            await supabase.from('vouches').insert({
-              rating: item.rating,
-              message: msg,
-              display_date: item.created_at,
-              source: 'sellauth',
-            });
-            imported++;
-          }
+          const dateStr = item.created_at;
+          if (existingDates.has(dateStr)) continue;
+          existingDates.add(dateStr); // prevent dupes within same import
+          toInsert.push({
+            rating: item.rating,
+            message: item.message || 'Automatic feedback after 7 days.',
+            display_date: dateStr,
+            source: 'sellauth',
+          });
         }
-        toast.success(`${imported} neue Vouches importiert (${items.length - imported} bereits vorhanden)`);
+        // Insert in batches of 50
+        for (let i = 0; i < toInsert.length; i += 50) {
+          const batch = toInsert.slice(i, i + 50);
+          await supabase.from('vouches').insert(batch);
+          imported += batch.length;
+        }
+        toast.success(`${imported} neue Vouches importiert (${items.length - toInsert.length} bereits vorhanden, ${data.total ?? items.length} total gefunden)`);
         fetchVouches();
       }
     } catch { toast.error('Import fehlgeschlagen'); }
     setImporting(false);
+  };
+
+  const getRandomPastDate = () => {
+    // Pick a random date from existing vouches schedule, or generate one in the last 12 months
+    if (displayVouches.length > 0) {
+      const dates = displayVouches.map(v => new Date(v.display_date).getTime()).sort((a, b) => a - b);
+      const minDate = dates[0];
+      const maxDate = dates[dates.length - 1];
+      const randomTime = minDate + Math.random() * (maxDate - minDate);
+      return new Date(randomTime).toISOString().slice(0, 16);
+    }
+    const now = Date.now();
+    const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+    return new Date(oneYearAgo + Math.random() * (now - oneYearAgo)).toISOString().slice(0, 16);
   };
 
   const addVouch = async () => {
@@ -1037,9 +1058,15 @@ function VouchesView() {
                 </div>
                 <div className="flex-1">
                   <label className="text-xs text-muted-foreground block mb-1">Datum</label>
-                  <Input type="datetime-local" value={newVouch.display_date}
-                    onChange={(e) => setNewVouch({ ...newVouch, display_date: e.target.value })}
-                    className="bg-card border-border text-foreground" />
+                  <div className="flex gap-2">
+                    <Input type="datetime-local" value={newVouch.display_date}
+                      onChange={(e) => setNewVouch({ ...newVouch, display_date: e.target.value })}
+                      className="bg-card border-border text-foreground flex-1" />
+                    <Button variant="noxOutline" size="sm" type="button"
+                      onClick={() => setNewVouch({ ...newVouch, display_date: getRandomPastDate() })}>
+                      🎲 Random
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div>
