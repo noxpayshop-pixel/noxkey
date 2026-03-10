@@ -1145,7 +1145,7 @@ function VouchesView() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <label className="text-xs text-muted-foreground block mb-1">Message</label>
                 <Textarea value={newVouch.message}
                   onChange={(e) => setNewVouch({ ...newVouch, message: e.target.value })}
                   placeholder="Vouch text..."
