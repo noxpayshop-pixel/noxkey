@@ -1132,7 +1132,7 @@ function VouchesView() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                   <label className="text-xs text-muted-foreground block mb-1">Date</label>
                   <div className="flex gap-2">
                     <Input type="datetime-local" value={newVouch.display_date}
                       onChange={(e) => setNewVouch({ ...newVouch, display_date: e.target.value })}
