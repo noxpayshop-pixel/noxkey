@@ -291,6 +291,9 @@ const defaultSettings: NoxSettings = {
   vouchUrl: '',
   discordInvite: 'https://discord.gg/thenox',
   feedbackImages: [],
+  discordVouchImages: [],
+  discordVouchChannelUrl: '',
+  sellAuthFeedbackUrl: 'https://thenox.mysellauth.com/feedback',
   vouchPlatforms: [],
   enabledCasinoGames: ALL_CASINO_GAMES,
 };
