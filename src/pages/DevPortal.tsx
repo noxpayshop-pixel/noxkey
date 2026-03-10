@@ -1152,8 +1152,8 @@ function VouchesView() {
                   className="bg-card border-border text-foreground placeholder:text-muted-foreground" rows={2} />
               </div>
               <div className="flex gap-2">
-                <Button variant="nox" size="sm" onClick={addVouch}>Speichern</Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Abbrechen</Button>
+                <Button variant="nox" size="sm" onClick={addVouch}>Save</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancel</Button>
               </div>
             </div>
           )}
