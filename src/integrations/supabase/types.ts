@@ -379,6 +379,33 @@ export type Database = {
         }
         Relationships: []
       }
+      vouches: {
+        Row: {
+          created_at: string | null
+          display_date: string
+          id: string
+          message: string | null
+          rating: number
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_date?: string
+          id?: string
+          message?: string | null
+          rating?: number
+          source?: string
+        }
+        Update: {
+          created_at?: string | null
+          display_date?: string
+          id?: string
+          message?: string | null
+          rating?: number
+          source?: string
+        }
+        Relationships: []
+      }
       waitlist: {
         Row: {
           created_at: string | null
