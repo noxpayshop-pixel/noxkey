@@ -1034,10 +1034,10 @@ function VouchesView() {
           await supabase.from('vouches').insert(batch);
           imported += batch.length;
         }
-        toast.success(`${imported} neue Vouches importiert (${items.length - toInsert.length} bereits vorhanden, ${data.total ?? items.length} total gefunden)`);
+        toast.success(`${imported} new vouches imported (${items.length - toInsert.length} already exist, ${data.total ?? items.length} total found)`);
         fetchVouches();
       }
-    } catch { toast.error('Import fehlgeschlagen'); }
+    } catch { toast.error('Import failed'); }
     setImporting(false);
   };
 
@@ -1065,7 +1065,7 @@ function VouchesView() {
     });
     setNewVouch({ rating: 5, message: '', display_date: new Date().toISOString().slice(0, 16) });
     setShowAddForm(false);
-    toast.success('Vouch hinzugefügt');
+    toast.success('Vouch added');
     fetchVouches();
   };
 
@@ -1077,13 +1077,13 @@ function VouchesView() {
       display_date: editingVouch.display_date,
     }).eq('id', editingVouch.id);
     setEditingVouch(null);
-    toast.success('Vouch aktualisiert');
+    toast.success('Vouch updated');
     fetchVouches();
   };
 
   const deleteVouch = async (id: string) => {
     await supabase.from('vouches').delete().eq('id', id);
-    toast.success('Vouch gelöscht');
+    toast.success('Vouch deleted');
     fetchVouches();
   };
 
@@ -1119,10 +1119,10 @@ function VouchesView() {
           {/* Add Form */}
           {showAddForm && (
             <div className="nox-surface border border-primary/30 rounded-xl p-4 mb-6 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Neuen Vouch hinzufügen</p>
+              <p className="text-sm font-semibold text-foreground">Add New Vouch</p>
               <div className="flex gap-3">
                 <div className="w-24">
-                  <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
+                   <label className="text-xs text-muted-foreground block mb-1">Stars</label>
                   <select
                     value={newVouch.rating}
                     onChange={(e) => setNewVouch({ ...newVouch, rating: Number(e.target.value) })}
@@ -1132,7 +1132,7 @@ function VouchesView() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                   <label className="text-xs text-muted-foreground block mb-1">Date</label>
                   <div className="flex gap-2">
                     <Input type="datetime-local" value={newVouch.display_date}
                       onChange={(e) => setNewVouch({ ...newVouch, display_date: e.target.value })}
@@ -1145,15 +1145,15 @@ function VouchesView() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <label className="text-xs text-muted-foreground block mb-1">Message</label>
                 <Textarea value={newVouch.message}
                   onChange={(e) => setNewVouch({ ...newVouch, message: e.target.value })}
                   placeholder="Vouch text..."
                   className="bg-card border-border text-foreground placeholder:text-muted-foreground" rows={2} />
               </div>
               <div className="flex gap-2">
-                <Button variant="nox" size="sm" onClick={addVouch}>Speichern</Button>
-                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Abbrechen</Button>
+                <Button variant="nox" size="sm" onClick={addVouch}>Save</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancel</Button>
               </div>
             </div>
           )}
@@ -1161,10 +1161,10 @@ function VouchesView() {
           {/* Edit Modal */}
           {editingVouch && (
             <div className="nox-surface border border-accent/30 rounded-xl p-4 mb-6 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Vouch bearbeiten</p>
+              <p className="text-sm font-semibold text-foreground">Edit Vouch</p>
               <div className="flex gap-3">
                 <div className="w-24">
-                  <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Stars</label>
                   <select
                     value={editingVouch.rating}
                     onChange={(e) => setEditingVouch({ ...editingVouch, rating: Number(e.target.value) })}
@@ -1174,7 +1174,7 @@ function VouchesView() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Date</label>
                   <Input type="datetime-local"
                     value={new Date(editingVouch.display_date).toISOString().slice(0, 16)}
                     onChange={(e) => setEditingVouch({ ...editingVouch, display_date: new Date(e.target.value).toISOString() })}
@@ -1182,14 +1182,14 @@ function VouchesView() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <label className="text-xs text-muted-foreground block mb-1">Message</label>
                 <Textarea value={editingVouch.message || ''}
                   onChange={(e) => setEditingVouch({ ...editingVouch, message: e.target.value })}
                   className="bg-card border-border text-foreground" rows={2} />
               </div>
               <div className="flex gap-2">
-                <Button variant="nox" size="sm" onClick={updateVouch}>Speichern</Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditingVouch(null)}>Abbrechen</Button>
+                <Button variant="nox" size="sm" onClick={updateVouch}>Save</Button>
+                <Button variant="ghost" size="sm" onClick={() => setEditingVouch(null)}>Cancel</Button>
               </div>
             </div>
           )}
@@ -1221,7 +1221,7 @@ function VouchesView() {
               </div>
             ))}
             {displayVouches.length === 0 && (
-              <p className="text-muted-foreground text-center py-8">Keine Vouches. Importiere von SellAuth oder füge manuell hinzu.</p>
+              <p className="text-muted-foreground text-center py-8">No vouches yet. Import from SellAuth or add manually.</p>
             )}
           </div>
         </div>
