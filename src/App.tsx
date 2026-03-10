@@ -32,6 +32,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <TrackPageView />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dev" element={<DevPortal />} />
