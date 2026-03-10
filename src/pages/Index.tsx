@@ -3,7 +3,7 @@ import KeyRedeemPanel from '@/components/KeyRedeemPanel';
 import PromoSection from '@/components/PromoSection';
 import ShopPreview from '@/components/ShopPreview';
 import TrustSection from '@/components/TrustSection';
-import ReviewsSection from '@/components/ReviewsSection';
+
 import { Link } from 'react-router-dom';
 import { Lock, Heart } from 'lucide-react';
 import logo from '@/assets/logo.gif';
@@ -71,7 +71,7 @@ const Index = () => {
 
       <ShopPreview />
       <PromoSection />
-      <ReviewsSection />
+      
       <TrustSection />
 
       {/* Footer */}

@@ -278,6 +278,9 @@ export interface NoxSettings {
   vouchUrl: string;
   discordInvite: string;
   feedbackImages: string[];
+  discordVouchImages: string[];
+  discordVouchChannelUrl: string;
+  sellAuthFeedbackUrl: string;
   vouchPlatforms: VouchPlatform[];
   enabledCasinoGames: string[];
 }
@@ -288,6 +291,9 @@ const defaultSettings: NoxSettings = {
   vouchUrl: '',
   discordInvite: 'https://discord.gg/thenox',
   feedbackImages: [],
+  discordVouchImages: [],
+  discordVouchChannelUrl: '',
+  sellAuthFeedbackUrl: 'https://thenox.mysellauth.com/feedback',
   vouchPlatforms: [],
   enabledCasinoGames: ALL_CASINO_GAMES,
 };
