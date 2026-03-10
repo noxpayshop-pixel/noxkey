@@ -71,7 +71,7 @@ const Index = () => {
 
       <ShopPreview />
       <PromoSection />
-      <ReviewsSection />
+      
       <TrustSection />
 
       {/* Footer */}
