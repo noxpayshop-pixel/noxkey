@@ -1164,7 +1164,7 @@ function VouchesView() {
               <p className="text-sm font-semibold text-foreground">Edit Vouch</p>
               <div className="flex gap-3">
                 <div className="w-24">
-                  <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Stars</label>
                   <select
                     value={editingVouch.rating}
                     onChange={(e) => setEditingVouch({ ...editingVouch, rating: Number(e.target.value) })}
