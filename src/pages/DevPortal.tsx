@@ -881,13 +881,23 @@ function AccountsView() {
 // ---- Vouches View ----
 function VouchesView() {
   const [vouches, setVouches] = useState<any[]>([]);
+  const [displayVouches, setDisplayVouches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [editingVouch, setEditingVouch] = useState<any | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newVouch, setNewVouch] = useState({ rating: 5, message: '', display_date: new Date().toISOString().slice(0, 16) });
+  const [section, setSection] = useState<'approvals' | 'manage'>('manage');
 
   const fetchVouches = async () => {
     setLoading(true);
-    const { data } = await supabase.from('vouch_submissions').select('*').order('created_at', { ascending: true });
-    setVouches(data ?? []);
+    const [{ data: submissions }, { data: display }] = await Promise.all([
+      supabase.from('vouch_submissions').select('*').order('created_at', { ascending: true }),
+      supabase.from('vouches').select('*').order('display_date', { ascending: false }),
+    ]);
+    setVouches(submissions ?? []);
+    setDisplayVouches(display ?? []);
     setLoading(false);
   };
 
@@ -898,7 +908,6 @@ function VouchesView() {
     await supabase.from('vouch_submissions').update({ status, resolved_at: new Date().toISOString() }).eq('id', id);
 
     if (status === 'approved') {
-      // Award 3 points
       const { data: existing } = await supabase.from('user_points').select('points').eq('discord_username', discordUsername).single();
       if (existing) {
         await supabase.from('user_points').update({ points: existing.points + 3, updated_at: new Date().toISOString() }).eq('discord_username', discordUsername);
@@ -916,6 +925,72 @@ function VouchesView() {
     setProcessing(null);
   };
 
+  const importFromSellAuth = async () => {
+    setImporting(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=feedbacks`,
+        { headers: { 'Authorization': `Bearer ${anonKey}`, 'apikey': anonKey } }
+      );
+      const data = await res.json();
+      if (res.ok) {
+        const items = (data.data ?? []).filter((r: any) => r.status === 'published' && r.rating >= 4);
+        let imported = 0;
+        for (const item of items) {
+          const msg = item.message || 'Automatic feedback after 7 days.';
+          // Check if already imported (by message + date combo)
+          const exists = displayVouches.some(v => v.message === msg && v.source === 'sellauth');
+          if (!exists) {
+            await supabase.from('vouches').insert({
+              rating: item.rating,
+              message: msg,
+              display_date: item.created_at,
+              source: 'sellauth',
+            });
+            imported++;
+          }
+        }
+        toast.success(`${imported} neue Vouches importiert (${items.length - imported} bereits vorhanden)`);
+        fetchVouches();
+      }
+    } catch { toast.error('Import fehlgeschlagen'); }
+    setImporting(false);
+  };
+
+  const addVouch = async () => {
+    if (!newVouch.message.trim()) return;
+    await supabase.from('vouches').insert({
+      rating: newVouch.rating,
+      message: newVouch.message,
+      display_date: new Date(newVouch.display_date).toISOString(),
+      source: 'manual',
+    });
+    setNewVouch({ rating: 5, message: '', display_date: new Date().toISOString().slice(0, 16) });
+    setShowAddForm(false);
+    toast.success('Vouch hinzugefügt');
+    fetchVouches();
+  };
+
+  const updateVouch = async () => {
+    if (!editingVouch) return;
+    await supabase.from('vouches').update({
+      rating: editingVouch.rating,
+      message: editingVouch.message,
+      display_date: editingVouch.display_date,
+    }).eq('id', editingVouch.id);
+    setEditingVouch(null);
+    toast.success('Vouch aktualisiert');
+    fetchVouches();
+  };
+
+  const deleteVouch = async (id: string) => {
+    await supabase.from('vouches').delete().eq('id', id);
+    toast.success('Vouch gelöscht');
+    fetchVouches();
+  };
+
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
 
   const pending = vouches.filter(v => v.status === 'pending');
@@ -923,55 +998,186 @@ function VouchesView() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Star className="w-5 h-5 text-primary" /> Vouch Approvals
-      </h2>
+      {/* Section toggle */}
+      <div className="flex gap-2 mb-6">
+        <Button variant={section === 'manage' ? 'nox' : 'ghost'} size="sm" onClick={() => setSection('manage')}>
+          <Star className="w-4 h-4 mr-1" /> Manage Vouches ({displayVouches.length})
+        </Button>
+        <Button variant={section === 'approvals' ? 'nox' : 'ghost'} size="sm" onClick={() => setSection('approvals')}>
+          <CheckCircle2 className="w-4 h-4 mr-1" /> Approvals {pending.length > 0 && `(${pending.length})`}
+        </Button>
+      </div>
 
-      {pending.length > 0 ? (
-        <div className="space-y-3 mb-6">
-          <p className="text-sm text-muted-foreground">Pending ({pending.length})</p>
-          {pending.map(v => (
-            <div key={v.id} className="nox-surface border border-primary/30 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-foreground font-medium">@{v.discord_username}</span>
-                  <span className="text-muted-foreground text-sm ml-2">· {v.platform}</span>
+      {section === 'manage' && (
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <Button variant="noxOutline" size="sm" onClick={importFromSellAuth} disabled={importing}>
+              {importing ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+              Import from SellAuth
+            </Button>
+            <Button variant="nox" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+              <Plus className="w-4 h-4 mr-1" /> Add Vouch
+            </Button>
+          </div>
+
+          {/* Add Form */}
+          {showAddForm && (
+            <div className="nox-surface border border-primary/30 rounded-xl p-4 mb-6 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Neuen Vouch hinzufügen</p>
+              <div className="flex gap-3">
+                <div className="w-24">
+                  <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
+                  <select
+                    value={newVouch.rating}
+                    onChange={(e) => setNewVouch({ ...newVouch, rating: Number(e.target.value) })}
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground text-sm"
+                  >
+                    {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} ★</option>)}
+                  </select>
                 </div>
-                <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                  <Input type="datetime-local" value={newVouch.display_date}
+                    onChange={(e) => setNewVouch({ ...newVouch, display_date: e.target.value })}
+                    className="bg-card border-border text-foreground" />
+                </div>
               </div>
-              <a href={v.screenshot_url} target="_blank" rel="noopener noreferrer">
-                <img src={v.screenshot_url} alt="Vouch" className="rounded-xl border border-border max-h-48 object-contain w-full hover:opacity-80 transition-opacity" />
-              </a>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <Textarea value={newVouch.message}
+                  onChange={(e) => setNewVouch({ ...newVouch, message: e.target.value })}
+                  placeholder="Vouch text..."
+                  className="bg-card border-border text-foreground placeholder:text-muted-foreground" rows={2} />
+              </div>
               <div className="flex gap-2">
-                <Button variant="nox" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'approved')} disabled={processing === v.id}>
-                  <CheckCircle2 className="w-4 h-4 mr-1" /> Approve (+3 pts)
-                </Button>
-                <Button variant="destructive" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'denied')} disabled={processing === v.id}>
-                  <XCircle className="w-4 h-4 mr-1" /> Deny
-                </Button>
+                <Button variant="nox" size="sm" onClick={addVouch}>Speichern</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Abbrechen</Button>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground text-center py-8 mb-6">No pending vouches.</p>
-      )}
+          )}
 
-      {resolved.length > 0 && (
-        <div>
-          <p className="text-sm text-muted-foreground mb-2">Resolved ({resolved.length})</p>
-          <div className="space-y-2">
-            {resolved.map(v => (
-              <div key={v.id} className="nox-surface border border-border rounded-xl p-3 text-sm flex items-center justify-between opacity-60">
-                <div className="flex items-center gap-2">
-                  <span className={v.status === 'approved' ? 'text-green-400' : 'text-destructive'}>{v.status}</span>
-                  <span className="text-foreground">@{v.discord_username}</span>
-                  <span className="text-muted-foreground">· {v.platform}</span>
+          {/* Edit Modal */}
+          {editingVouch && (
+            <div className="nox-surface border border-accent/30 rounded-xl p-4 mb-6 space-y-3">
+              <p className="text-sm font-semibold text-foreground">Vouch bearbeiten</p>
+              <div className="flex gap-3">
+                <div className="w-24">
+                  <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
+                  <select
+                    value={editingVouch.rating}
+                    onChange={(e) => setEditingVouch({ ...editingVouch, rating: Number(e.target.value) })}
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2 text-foreground text-sm"
+                  >
+                    {[5, 4, 3, 2, 1].map(n => <option key={n} value={n}>{n} ★</option>)}
+                  </select>
                 </div>
-                <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                <div className="flex-1">
+                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                  <Input type="datetime-local"
+                    value={new Date(editingVouch.display_date).toISOString().slice(0, 16)}
+                    onChange={(e) => setEditingVouch({ ...editingVouch, display_date: new Date(e.target.value).toISOString() })}
+                    className="bg-card border-border text-foreground" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <Textarea value={editingVouch.message || ''}
+                  onChange={(e) => setEditingVouch({ ...editingVouch, message: e.target.value })}
+                  className="bg-card border-border text-foreground" rows={2} />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="nox" size="sm" onClick={updateVouch}>Speichern</Button>
+                <Button variant="ghost" size="sm" onClick={() => setEditingVouch(null)}>Abbrechen</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Vouch list */}
+          <div className="space-y-2">
+            {displayVouches.map(v => (
+              <div key={v.id} className="nox-surface border border-border rounded-xl p-3 flex items-center justify-between group hover:border-primary/20 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3 h-3 ${i < v.rating ? 'text-primary fill-primary' : 'text-muted-foreground/20'}`} />
+                    ))}
+                  </div>
+                  <span className="text-sm text-foreground truncate">{v.message || '—'}</span>
+                  <span className="text-[10px] text-muted-foreground/50 shrink-0 uppercase">{v.source}</span>
+                  <span className="text-[10px] text-muted-foreground/40 shrink-0">
+                    {new Date(v.display_date).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
+                  <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setEditingVouch(v)}>
+                    <Eye className="w-3.5 h-3.5 text-primary" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => deleteVouch(v.id)}>
+                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
+            {displayVouches.length === 0 && (
+              <p className="text-muted-foreground text-center py-8">Keine Vouches. Importiere von SellAuth oder füge manuell hinzu.</p>
+            )}
           </div>
+        </div>
+      )}
+
+      {section === 'approvals' && (
+        <div>
+          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Star className="w-5 h-5 text-primary" /> Vouch Approvals
+          </h2>
+
+          {pending.length > 0 ? (
+            <div className="space-y-3 mb-6">
+              <p className="text-sm text-muted-foreground">Pending ({pending.length})</p>
+              {pending.map(v => (
+                <div key={v.id} className="nox-surface border border-primary/30 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-foreground font-medium">@{v.discord_username}</span>
+                      <span className="text-muted-foreground text-sm ml-2">· {v.platform}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <a href={v.screenshot_url} target="_blank" rel="noopener noreferrer">
+                    <img src={v.screenshot_url} alt="Vouch" className="rounded-xl border border-border max-h-48 object-contain w-full hover:opacity-80 transition-opacity" />
+                  </a>
+                  <div className="flex gap-2">
+                    <Button variant="nox" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'approved')} disabled={processing === v.id}>
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> Approve (+3 pts)
+                    </Button>
+                    <Button variant="destructive" size="sm" className="flex-1" onClick={() => handleDecision(v.id, v.discord_username, 'denied')} disabled={processing === v.id}>
+                      <XCircle className="w-4 h-4 mr-1" /> Deny
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-8 mb-6">No pending vouches.</p>
+          )}
+
+          {resolved.length > 0 && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Resolved ({resolved.length})</p>
+              <div className="space-y-2">
+                {resolved.map(v => (
+                  <div key={v.id} className="nox-surface border border-border rounded-xl p-3 text-sm flex items-center justify-between opacity-60">
+                    <div className="flex items-center gap-2">
+                      <span className={v.status === 'approved' ? 'text-green-400' : 'text-destructive'}>{v.status}</span>
+                      <span className="text-foreground">@{v.discord_username}</span>
+                      <span className="text-muted-foreground">· {v.platform}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
