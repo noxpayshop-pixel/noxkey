@@ -3,6 +3,19 @@ import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { Shield, Globe, Users, Star, ExternalLink, X, Award } from 'lucide-react';
 import { getSettings } from '@/lib/store';
 
+interface SellAuthFeedback {
+  id: number;
+  rating: number;
+  message: string | null;
+  status: string;
+  is_automatic: boolean;
+  created_at: string;
+  invoice: {
+    email: string;
+    items: Array<{ product: { name: string } }>;
+  };
+}
+
 const AnimatedCounter = ({ target, suffix = '' }: { target: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
@@ -29,9 +42,67 @@ const AnimatedCounter = ({ target, suffix = '' }: { target: number; suffix?: str
   return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
 };
 
+const formatDate = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+};
+
+const SellAuthVouchCard = ({ review }: { review: SellAuthFeedback }) => {
+  const productName = review.invoice?.items?.[0]?.product?.name ?? 'Product';
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/40 p-4 flex flex-col gap-2.5 hover:border-primary/20 transition-colors">
+      {/* Header: Stars + Date */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${i < review.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`}
+            />
+          ))}
+        </div>
+        <span className="text-xs text-primary/60">{formatDate(review.created_at)}</span>
+      </div>
+
+      {/* Message */}
+      <p className="text-sm text-muted-foreground italic line-clamp-2">
+        {review.message || 'Automatic feedback after 7 days.'}
+      </p>
+
+      {/* Product */}
+      <span className="text-[10px] text-primary/50 uppercase tracking-wider truncate">
+        {productName}
+      </span>
+    </div>
+  );
+};
+
 const TrustSection = () => {
   const settings = getSettings();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [sellAuthReviews, setSellAuthReviews] = useState<SellAuthFeedback[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=feedbacks`,
+          { headers: { 'Authorization': `Bearer ${anonKey}`, 'apikey': anonKey } }
+        );
+        const data = await res.json();
+        if (res.ok) {
+          const items: SellAuthFeedback[] = data.data ?? [];
+          setSellAuthReviews(items.filter(r => r.status === 'published' && r.rating === 5).slice(0, 12));
+        }
+      } catch { /* silent */ }
+      setLoadingReviews(false);
+    };
+    fetchReviews();
+  }, []);
 
   const stats = [
     { icon: Globe, label: 'Countries', value: 50, suffix: '+', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
@@ -40,8 +111,9 @@ const TrustSection = () => {
     { icon: Star, label: 'Average Rating', value: 4, suffix: '.9/5', color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
   ];
 
-  const platforms = settings.vouchPlatforms?.filter(p => p.name && p.url) || [];
-  const images = settings.feedbackImages?.filter(Boolean) || [];
+  const discordImages = settings.discordVouchImages?.filter(Boolean) || [];
+  const sellAuthUrl = settings.sellAuthFeedbackUrl || 'https://thenox.mysellauth.com/feedback';
+  const discordVouchChannelUrl = settings.discordVouchChannelUrl || '';
 
   return (
     <section className="py-28 px-6 relative overflow-hidden">
@@ -71,18 +143,18 @@ const TrustSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
             >
-              Trusted <span className="nox-gradient-text">All Over<br className="hidden md:block" /> The World</span>
+              View Our <span className="nox-gradient-text">Vouches</span>
             </motion.h2>
+            <motion.p
+              className="text-muted-foreground text-sm mt-3"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              Across different platforms — real feedback from real customers.
+            </motion.p>
           </div>
-          <motion.p
-            className="text-muted-foreground max-w-sm text-sm leading-relaxed md:text-right"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            Thousands of customers trust The Nox for fast, reliable, and secure digital delivery.
-          </motion.p>
         </div>
 
         {/* Stats grid */}
@@ -107,18 +179,73 @@ const TrustSection = () => {
           ))}
         </div>
 
-        {/* Feedback Gallery */}
-        {images.length > 0 && (
+        {/* SellAuth Vouches */}
+        <motion.div
+          className="mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <div className="flex items-center justify-between mb-5">
+            <p className="text-xs font-bold text-primary uppercase tracking-[0.3em]">SellAuth Vouches</p>
+            <a
+              href={sellAuthUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-accent transition-colors"
+            >
+              <ExternalLink className="w-3 h-3" /> View all on SellAuth
+            </a>
+          </div>
+
+          {loadingReviews ? (
+            <div className="flex justify-center py-8">
+              <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            </div>
+          ) : sellAuthReviews.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {sellAuthReviews.map((review) => (
+                <SellAuthVouchCard key={review.id} review={review} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground/50 text-center py-8">No SellAuth vouches available.</p>
+          )}
+
+          {sellAuthReviews.length > 0 && (
+            <p className="text-[10px] text-muted-foreground/40 mt-3 text-center">
+              vouched on{' '}
+              <a href={sellAuthUrl} target="_blank" rel="noopener noreferrer" className="text-primary/50 hover:text-primary transition-colors underline underline-offset-2">
+                SellAuth
+              </a>
+            </p>
+          )}
+        </motion.div>
+
+        {/* Discord Vouches */}
+        {discordImages.length > 0 && (
           <motion.div
             className="mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.1 }}
           >
-            <p className="text-xs font-bold text-primary uppercase tracking-[0.3em] mb-6">Let Our Customers Talk</p>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-xs font-bold text-primary uppercase tracking-[0.3em]">Discord Vouches</p>
+              {discordVouchChannelUrl && (
+                <a
+                  href={discordVouchChannelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-accent transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" /> View vouch channel
+                </a>
+              )}
+            </div>
             <div className="flex flex-wrap gap-3">
-              {images.map((img, i) => (
+              {discordImages.map((img, i) => (
                 <motion.div
                   key={i}
                   className="rounded-xl border border-border overflow-hidden cursor-pointer nox-hover-glow group"
@@ -130,7 +257,7 @@ const TrustSection = () => {
                 >
                   <img
                     src={img}
-                    alt={`Feedback ${i + 1}`}
+                    alt={`Discord vouch ${i + 1}`}
                     className="w-auto h-auto max-w-full rounded-lg group-hover:scale-[1.02] transition-transform duration-300"
                     loading="lazy"
                   />
@@ -140,7 +267,7 @@ const TrustSection = () => {
           </motion.div>
         )}
 
-        {/* Vouch CTA */}
+        {/* No vouch = No warranty */}
         <motion.div
           className="nox-surface rounded-2xl border border-border p-8 nox-hover-glow nox-card-shine nox-card-shine-hover relative overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
@@ -157,7 +284,7 @@ const TrustSection = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              {platforms.map((platform, i) => (
+              {(settings.vouchPlatforms?.filter(p => p.name && p.url) || []).map((platform, i) => (
                 <a
                   key={i}
                   href={platform.url}
@@ -169,9 +296,6 @@ const TrustSection = () => {
                   {platform.name}
                 </a>
               ))}
-              {platforms.length === 0 && (
-                <span className="text-muted-foreground/50 text-sm">No platforms configured</span>
-              )}
             </div>
           </div>
         </motion.div>
@@ -202,7 +326,7 @@ const TrustSection = () => {
               </button>
               <img
                 src={selectedImage}
-                alt="Feedback"
+                alt="Vouch"
                 className="w-full rounded-2xl border border-border shadow-2xl"
               />
             </motion.div>
