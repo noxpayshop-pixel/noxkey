@@ -425,7 +425,8 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             )}
           </AnimatePresence>
         )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
