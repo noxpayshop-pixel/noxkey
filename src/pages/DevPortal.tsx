@@ -13,10 +13,11 @@ import {
 import {
   Package, Plus, Trash2, Copy, ChevronLeft, Settings, Users, KeyRound, LogOut,
   BarChart3, Send, Loader2, RefreshCw, CheckCircle2, XCircle, Eye, ArrowRight,
-  User, ImageIcon, Gift, Star, Coins,
+  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
+import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
 const DEV_PASS = 'aohgiehxlsda9bg0eeh0s0peh';
@@ -38,21 +39,39 @@ const DevPortal = () => {
 
   if (!authed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 nox-grid-pattern opacity-20" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[150px]" />
+        
         <motion.div
-          className="nox-surface rounded-2xl border border-border p-8 w-full max-w-sm nox-glow"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          className="relative nox-surface rounded-2xl border border-border/60 p-10 w-full max-w-[420px] nox-card-shine"
+          initial={{ opacity: 0, y: 20, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <h2 className="text-2xl font-bold text-foreground mb-6 text-center nox-gradient-text">Dev Portal</h2>
+          <div className="flex flex-col items-center mb-8">
+            <img src={logo} alt="The Nox" className="w-12 h-12 mb-4 rounded-full" />
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">Dev Portal</h2>
+            <p className="text-sm text-muted-foreground mt-1">Admin-Bereich</p>
+          </div>
           <div className="space-y-4">
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username"
-              className="bg-background border-border text-foreground placeholder:text-muted-foreground" />
-            <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" type="password"
-              className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-              onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
-            {error && <p className="text-destructive text-sm">{error}</p>}
-            <Button variant="nox" className="w-full" onClick={handleLogin}>Login</Button>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block uppercase tracking-wider">Username</label>
+              <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Enter username"
+                className="bg-background/50 border-border/60 text-foreground placeholder:text-muted-foreground/50 h-11" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block uppercase tracking-wider">Password</label>
+              <Input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter password" type="password"
+                className="bg-background/50 border-border/60 text-foreground placeholder:text-muted-foreground/50 h-11"
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+            </div>
+            {error && (
+              <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                className="text-destructive text-sm text-center bg-destructive/10 rounded-lg py-2">{error}</motion.p>
+            )}
+            <Button variant="nox" className="w-full h-11 text-sm font-semibold" onClick={handleLogin}>Sign In</Button>
           </div>
         </motion.div>
       </div>
