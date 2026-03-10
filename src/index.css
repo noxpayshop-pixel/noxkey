@@ -238,8 +238,8 @@
 
   /* Pulse glow */
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px -5px hsl(270 80% 65% / 0.3); }
-    50% { box-shadow: 0 0 40px -5px hsl(270 80% 65% / 0.6); }
+    0%, 100% { box-shadow: 0 0 20px -5px hsl(265 85% 65% / 0.3); }
+    50% { box-shadow: 0 0 40px -5px hsl(265 85% 65% / 0.6); }
   }
 
   .animate-pulse-glow {
