@@ -1182,7 +1182,7 @@ function VouchesView() {
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground block mb-1">Nachricht</label>
+                <label className="text-xs text-muted-foreground block mb-1">Message</label>
                 <Textarea value={editingVouch.message || ''}
                   onChange={(e) => setEditingVouch({ ...editingVouch, message: e.target.value })}
                   className="bg-card border-border text-foreground" rows={2} />
