@@ -1077,7 +1077,7 @@ function VouchesView() {
       display_date: editingVouch.display_date,
     }).eq('id', editingVouch.id);
     setEditingVouch(null);
-    toast.success('Vouch aktualisiert');
+    toast.success('Vouch updated');
     fetchVouches();
   };
 
