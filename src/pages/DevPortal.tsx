@@ -1034,7 +1034,7 @@ function VouchesView() {
           await supabase.from('vouches').insert(batch);
           imported += batch.length;
         }
-        toast.success(`${imported} neue Vouches importiert (${items.length - toInsert.length} bereits vorhanden, ${data.total ?? items.length} total gefunden)`);
+        toast.success(`${imported} new vouches imported (${items.length - toInsert.length} already exist, ${data.total ?? items.length} total found)`);
         fetchVouches();
       }
     } catch { toast.error('Import fehlgeschlagen'); }
