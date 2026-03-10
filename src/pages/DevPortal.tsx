@@ -1083,7 +1083,7 @@ function VouchesView() {
 
   const deleteVouch = async (id: string) => {
     await supabase.from('vouches').delete().eq('id', id);
-    toast.success('Vouch gelöscht');
+    toast.success('Vouch deleted');
     fetchVouches();
   };
 
