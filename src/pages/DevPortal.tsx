@@ -89,6 +89,8 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     const data = await getProducts();
@@ -113,82 +115,124 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
 
   const selected = products.find(p => p.id === selectedProduct);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold nox-gradient-text">The Nox — Dev Portal</h1>
-        <div className="flex items-center gap-1 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => { setTab('products'); setSelectedProduct(null); }}
-            className={tab === 'products' ? 'text-primary' : 'text-muted-foreground'}>
-            <Package className="w-4 h-4 mr-1" /> Products
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('claims')}
-            className={tab === 'claims' ? 'text-primary' : 'text-muted-foreground'}>
-            <BarChart3 className="w-4 h-4 mr-1" /> Claims
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('requests')}
-            className={tab === 'requests' ? 'text-primary' : 'text-muted-foreground'}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Requests
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('accounts')}
-            className={tab === 'accounts' ? 'text-primary' : 'text-muted-foreground'}>
-            <Users className="w-4 h-4 mr-1" /> Accounts
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('vouches')}
-            className={tab === 'vouches' ? 'text-primary' : 'text-muted-foreground'}>
-            <ImageIcon className="w-4 h-4 mr-1" /> Vouches
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('gifts')}
-            className={tab === 'gifts' ? 'text-primary' : 'text-muted-foreground'}>
-            <Package className="w-4 h-4 mr-1" /> Gifts
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('casino')}
-            className={tab === 'casino' ? 'text-primary' : 'text-muted-foreground'}>
-            <Coins className="w-4 h-4 mr-1" /> Casino
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('traffic')}
-            className={tab === 'traffic' ? 'text-primary' : 'text-muted-foreground'}>
-            <BarChart3 className="w-4 h-4 mr-1" /> Traffic
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setTab('settings')}
-            className={tab === 'settings' ? 'text-primary' : 'text-muted-foreground'}>
-            <Settings className="w-4 h-4 mr-1" /> Settings
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onLogout}><LogOut className="w-4 h-4" /></Button>
-        </div>
-      </div>
+  const tabs = [
+    { id: 'products', label: 'Products', icon: Package },
+    { id: 'claims', label: 'Claims', icon: BarChart3 },
+    { id: 'requests', label: 'Requests', icon: RefreshCw },
+    { id: 'accounts', label: 'Accounts', icon: Users },
+    { id: 'vouches', label: 'Vouches', icon: Star },
+    { id: 'gifts', label: 'Gifts', icon: Gift },
+    { id: 'casino', label: 'Casino', icon: Coins },
+    { id: 'traffic', label: 'Traffic', icon: Activity },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ] as const;
 
-      <div className="p-6 max-w-5xl mx-auto">
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <motion.aside
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border/50 bg-sidebar transition-all duration-300 ${sidebarOpen ? 'w-56' : 'w-[60px]'}`}
+        initial={false}
+      >
+        {/* Sidebar header */}
+        <div className={`flex items-center border-b border-border/40 h-14 ${sidebarOpen ? 'px-4 gap-3' : 'justify-center px-0'}`}>
+          <img src={logo} alt="The Nox" className="w-7 h-7 rounded-full shrink-0" />
+          {sidebarOpen && (
+            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm font-bold nox-gradient-text whitespace-nowrap">
+              Dev Portal
+            </motion.span>
+          )}
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`text-muted-foreground hover:text-foreground transition-colors ${sidebarOpen ? 'ml-auto' : 'hidden'}`}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+          {tabs.map(({ id, label, icon: Icon }) => {
+            const isActive = tab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => { setTab(id as any); if (id !== 'products') setSelectedProduct(null); }}
+                className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-all duration-200 group
+                  ${sidebarOpen ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'}
+                  ${isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                {sidebarOpen && <span className="truncate">{label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar footer */}
+        <div className={`border-t border-border/40 p-2 ${sidebarOpen ? '' : 'flex justify-center'}`}>
+          <button
+            onClick={onLogout}
+            className={`w-full flex items-center gap-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200
+              ${sidebarOpen ? 'px-3 py-2.5' : 'px-0 py-2.5 justify-center'}`}
+          >
+            <LogOut className="w-4 h-4 shrink-0" />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* Main content */}
+      <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-56' : 'ml-[60px]'}`}>
+        {/* Top bar */}
+        <div className="sticky top-0 z-30 h-14 border-b border-border/40 glass-strong flex items-center px-6 gap-4">
+          {!sidebarOpen && (
+            <button onClick={() => setSidebarOpen(true)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
+          <h1 className="text-sm font-semibold text-foreground capitalize">{tab}</h1>
+          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span>Online</span>
+          </div>
+        </div>
+
+        <div className="p-6 max-w-5xl mx-auto">
         {loading && tab === 'products' && !selectedProduct ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <AnimatePresence mode="wait">
             {tab === 'products' && !selectedProduct && (
-              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div key="list" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                 <div className="flex gap-3 mb-6">
                   <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New product name..."
-                    className="bg-card border-border text-foreground placeholder:text-muted-foreground"
+                    className="bg-card/50 border-border/60 text-foreground placeholder:text-muted-foreground/50"
                     onKeyDown={(e) => e.key === 'Enter' && addProduct()} />
                   <Button variant="nox" onClick={addProduct}><Plus className="w-4 h-4 mr-1" /> Add</Button>
                 </div>
-                <div className="grid gap-3">
+                <div className="grid gap-2">
                   {products.map(p => (
                     <div key={p.id}
-                      className="nox-surface rounded-xl border border-border p-4 flex items-center justify-between cursor-pointer hover:border-primary/30 transition-colors"
+                      className="nox-surface rounded-xl border border-border/50 p-4 flex items-center justify-between cursor-pointer hover:border-primary/30 hover:bg-card/60 transition-all duration-200"
                       onClick={() => setSelectedProduct(p.id)}>
                       <div>
-                        <p className="font-semibold text-foreground">{p.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="font-semibold text-foreground text-sm">{p.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {p.stockCount} stock · {p.codeCount} codes · {p.redeemedCount} redeemed · {p.waitlistCount} waitlist
                         </p>
                       </div>
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
+                          <Trash2 className="w-4 h-4 text-destructive/70" />
+                        </Button>
+                        <ArrowRight className="w-4 h-4 text-muted-foreground/40" />
+                      </div>
                     </div>
                   ))}
                   {products.length === 0 && (
-                    <p className="text-muted-foreground text-center py-12">No products yet. Create your first one above.</p>
+                    <p className="text-muted-foreground text-center py-16 text-sm">No products yet. Create your first one above.</p>
                   )}
                 </div>
               </motion.div>
