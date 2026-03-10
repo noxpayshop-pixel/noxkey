@@ -1037,7 +1037,7 @@ function VouchesView() {
         toast.success(`${imported} new vouches imported (${items.length - toInsert.length} already exist, ${data.total ?? items.length} total found)`);
         fetchVouches();
       }
-    } catch { toast.error('Import fehlgeschlagen'); }
+    } catch { toast.error('Import failed'); }
     setImporting(false);
   };
 
