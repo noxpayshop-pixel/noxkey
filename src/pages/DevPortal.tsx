@@ -126,6 +126,10 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             className={tab === 'casino' ? 'text-primary' : 'text-muted-foreground'}>
             <Coins className="w-4 h-4 mr-1" /> Casino
           </Button>
+          <Button variant="ghost" size="sm" onClick={() => setTab('traffic')}
+            className={tab === 'traffic' ? 'text-primary' : 'text-muted-foreground'}>
+            <BarChart3 className="w-4 h-4 mr-1" /> Traffic
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setTab('settings')}
             className={tab === 'settings' ? 'text-primary' : 'text-muted-foreground'}>
             <Settings className="w-4 h-4 mr-1" /> Settings
