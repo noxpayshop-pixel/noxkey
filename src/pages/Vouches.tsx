@@ -115,10 +115,10 @@ const Vouches = () => {
                   </a>
                 </div>
 
-                {sellAuthVouches.length > 0 ? (
+                {allVouches.length > 0 ? (
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {sellAuthVouches.map((v) => (
+                      {allVouches.map((v) => (
                         <VouchCard key={v.id} vouch={v} />
                       ))}
                     </div>
@@ -130,26 +130,9 @@ const Vouches = () => {
                     </p>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground/50 text-center py-8">No SellAuth vouches available.</p>
+                  <p className="text-sm text-muted-foreground/50 text-center py-8">No vouches available.</p>
                 )}
               </motion.div>
-
-              {/* Manual / Other Vouches */}
-              {manualVouches.length > 0 && (
-                <motion.div
-                  className="mb-16"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                >
-                  <p className="text-xs font-bold text-primary uppercase tracking-[0.3em] mb-5">Other Vouches</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {manualVouches.map((v) => (
-                      <VouchCard key={v.id} vouch={v} />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
 
               {/* Discord Vouches */}
               {discordImages.length > 0 && (
