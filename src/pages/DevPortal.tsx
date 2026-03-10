@@ -16,6 +16,7 @@ import {
   User, ImageIcon, Gift, Star, Coins,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import TrafficView from '@/components/TrafficView';
 
 const DEV_USER = 'TheNox';
 const DEV_PASS = 'aohgiehxlsda9bg0eeh0s0peh';
@@ -65,7 +66,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -125,6 +126,10 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
           <Button variant="ghost" size="sm" onClick={() => setTab('casino')}
             className={tab === 'casino' ? 'text-primary' : 'text-muted-foreground'}>
             <Coins className="w-4 h-4 mr-1" /> Casino
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setTab('traffic')}
+            className={tab === 'traffic' ? 'text-primary' : 'text-muted-foreground'}>
+            <BarChart3 className="w-4 h-4 mr-1" /> Traffic
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setTab('settings')}
             className={tab === 'settings' ? 'text-primary' : 'text-muted-foreground'}>
@@ -209,6 +214,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === 'casino' && (
               <motion.div key="casino" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <CasinoAdminView />
+              </motion.div>
+            )}
+
+            {tab === 'traffic' && (
+              <motion.div key="traffic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <TrafficView />
               </motion.div>
             )}
 

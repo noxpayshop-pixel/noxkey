@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      discord_blacklist: {
+        Row: {
+          created_at: string
+          discord_username: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          discord_username: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          discord_username?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       discord_users: {
         Row: {
           created_at: string | null
@@ -92,6 +113,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_blacklist: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: string
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      ip_logs: {
+        Row: {
+          action: string
+          city: string | null
+          country: string | null
+          country_code: string | null
+          created_at: string
+          discord_username: string
+          id: string
+          ip_address: string
+        }
+        Insert: {
+          action?: string
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          discord_username: string
+          id?: string
+          ip_address: string
+        }
+        Update: {
+          action?: string
+          city?: string | null
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          discord_username?: string
+          id?: string
+          ip_address?: string
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
@@ -116,6 +191,36 @@ export type Database = {
           expires_at?: string
           id?: string
           is_used?: boolean | null
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          country: string | null
+          country_code: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          page: string
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          page?: string
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          page?: string
+          user_agent?: string | null
         }
         Relationships: []
       }

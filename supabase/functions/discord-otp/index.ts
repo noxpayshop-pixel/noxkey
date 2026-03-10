@@ -17,23 +17,50 @@ Deno.serve(async (req) => {
 
   const { action, discord_username, otp } = await req.json()
 
-  if (action === 'send_otp') {
-    // Generate 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
-    const expires_at = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 min
+  // Get IP address
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+             req.headers.get('x-real-ip') || 
+             'unknown'
 
-    // Store OTP
+  // Check IP blacklist
+  const { data: ipBanned } = await supabase
+    .from('ip_blacklist')
+    .select('id')
+    .eq('ip_address', ip)
+    .limit(1)
+    .single()
+
+  if (ipBanned) {
+    return new Response(JSON.stringify({ error: 'Access denied.' }), 
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+
+  // Check Discord blacklist
+  const { data: discordBanned } = await supabase
+    .from('discord_blacklist')
+    .select('id')
+    .eq('discord_username', discord_username.toLowerCase())
+    .limit(1)
+    .single()
+
+  if (discordBanned) {
+    return new Response(JSON.stringify({ error: 'This account has been banned.' }), 
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+
+  if (action === 'send_otp') {
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const expires_at = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+
     await supabase.from('otp_codes').insert({
       discord_username,
       code,
       expires_at,
     })
 
-    // Find user in Discord guild
     const botToken = Deno.env.get('DISCORD_OTP_BOT_TOKEN')!
     const guildId = Deno.env.get('DISCORD_GUILD_ID')!
 
-    // Search for user by username
     const searchRes = await fetch(
       `https://discord.com/api/v10/guilds/${guildId}/members/search?query=${encodeURIComponent(discord_username)}&limit=1`,
       { headers: { Authorization: `Bot ${botToken}` } }
@@ -54,7 +81,6 @@ Deno.serve(async (req) => {
 
     const userId = member.user.id
 
-    // Create DM channel
     const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
       method: 'POST',
       headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
@@ -68,7 +94,6 @@ Deno.serve(async (req) => {
 
     const dm = await dmRes.json()
 
-    // Send OTP embed
     await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
@@ -88,7 +113,6 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
   } else if (action === 'verify_otp') {
-    // Find valid OTP
     const { data: otpRow } = await supabase
       .from('otp_codes')
       .select('*')
@@ -105,10 +129,8 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    // Mark OTP as used
     await supabase.from('otp_codes').update({ is_used: true }).eq('id', otpRow.id)
 
-    // Create or update session
     const sessionToken = crypto.randomUUID()
 
     const { data: existing } = await supabase
@@ -117,11 +139,38 @@ Deno.serve(async (req) => {
       .eq('discord_username', discord_username)
       .single()
 
+    const isNewAccount = !existing
+
     if (existing) {
       await supabase.from('discord_users').update({ session_token: sessionToken }).eq('id', existing.id)
     } else {
       await supabase.from('discord_users').insert({ discord_username, session_token: sessionToken })
     }
+
+    // Log IP
+    let country = null
+    let countryCode = null
+    let city = null
+    try {
+      if (ip && ip !== 'unknown') {
+        const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=country,countryCode,city`)
+        if (geoRes.ok) {
+          const geo = await geoRes.json()
+          country = geo.country || null
+          countryCode = geo.countryCode || null
+          city = geo.city || null
+        }
+      }
+    } catch {}
+
+    await supabase.from('ip_logs').insert({
+      discord_username,
+      ip_address: ip,
+      country,
+      country_code: countryCode,
+      city,
+      action: isNewAccount ? 'register' : 'login',
+    })
 
     return new Response(JSON.stringify({ success: true, session_token: sessionToken }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
