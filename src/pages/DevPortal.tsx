@@ -1161,7 +1161,7 @@ function VouchesView() {
           {/* Edit Modal */}
           {editingVouch && (
             <div className="nox-surface border border-accent/30 rounded-xl p-4 mb-6 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Vouch bearbeiten</p>
+              <p className="text-sm font-semibold text-foreground">Edit Vouch</p>
               <div className="flex gap-3">
                 <div className="w-24">
                   <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
