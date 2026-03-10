@@ -1065,7 +1065,7 @@ function VouchesView() {
     });
     setNewVouch({ rating: 5, message: '', display_date: new Date().toISOString().slice(0, 16) });
     setShowAddForm(false);
-    toast.success('Vouch hinzugefügt');
+    toast.success('Vouch added');
     fetchVouches();
   };
 
