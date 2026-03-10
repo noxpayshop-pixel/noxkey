@@ -278,6 +278,9 @@ export interface NoxSettings {
   vouchUrl: string;
   discordInvite: string;
   feedbackImages: string[];
+  discordVouchImages: string[];
+  discordVouchChannelUrl: string;
+  sellAuthFeedbackUrl: string;
   vouchPlatforms: VouchPlatform[];
   enabledCasinoGames: string[];
 }
