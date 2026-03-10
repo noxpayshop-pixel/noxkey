@@ -271,20 +271,38 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
                   </div>
                 </div>
 
-                {/* Feedback Images - Upload */}
+                {/* SellAuth Feedback URL */}
                 <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Feedback Images (shown on homepage)</label>
+                  <label className="text-sm text-muted-foreground mb-1 block">SellAuth Feedback URL</label>
+                  <Input value={settings.sellAuthFeedbackUrl || ''}
+                    onChange={(e) => { const s = { ...settings, sellAuthFeedbackUrl: e.target.value }; setSettingsState(s); saveSettings(s); }}
+                    placeholder="https://thenox.mysellauth.com/feedback"
+                    className="bg-card border-border text-foreground placeholder:text-muted-foreground" />
+                </div>
+
+                {/* Discord Vouch Channel URL */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-1 block">Discord Vouch Channel URL</label>
+                  <Input value={settings.discordVouchChannelUrl || ''}
+                    onChange={(e) => { const s = { ...settings, discordVouchChannelUrl: e.target.value }; setSettingsState(s); saveSettings(s); }}
+                    placeholder="https://discord.com/channels/..."
+                    className="bg-card border-border text-foreground placeholder:text-muted-foreground" />
+                </div>
+
+                {/* Discord Vouch Images */}
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Discord Vouch Images (manually managed, shown on homepage)</label>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {(settings.feedbackImages || []).map((url, i) => (
+                      {(settings.discordVouchImages || []).map((url, i) => (
                         url && (
                           <div key={i} className="relative group">
                             <img src={url} alt="" className="w-full h-24 rounded-lg object-cover border border-border" />
                             <Button variant="ghost" size="icon"
                               className="absolute top-1 right-1 w-6 h-6 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => {
-                                const imgs = (settings.feedbackImages || []).filter((_, idx) => idx !== i);
-                                const s = { ...settings, feedbackImages: imgs };
+                                const imgs = (settings.discordVouchImages || []).filter((_, idx) => idx !== i);
+                                const s = { ...settings, discordVouchImages: imgs };
                                 setSettingsState(s); saveSettings(s);
                               }}>
                               <Trash2 className="w-3 h-3 text-destructive" />
@@ -311,8 +329,8 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
                             newUrls.push(data.publicUrl);
                           }
                           if (newUrls.length > 0) {
-                            const imgs = [...(settings.feedbackImages || []), ...newUrls];
-                            const s = { ...settings, feedbackImages: imgs };
+                            const imgs = [...(settings.discordVouchImages || []), ...newUrls];
+                            const s = { ...settings, discordVouchImages: imgs };
                             setSettingsState(s); saveSettings(s);
                             toast.success(`${newUrls.length} image(s) uploaded`);
                           }
@@ -320,7 +338,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
                         }}
                       />
                       <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-accent transition-colors cursor-pointer border border-border rounded-lg px-4 py-2">
-                        <ImageIcon className="w-4 h-4" /> Upload Images
+                        <ImageIcon className="w-4 h-4" /> Upload Discord Vouches
                       </span>
                     </label>
                   </div>
