@@ -29,6 +29,7 @@ const App = () => (
             <Route path="/mypoints" element={<MyPoints />} />
             <Route path="/casino" element={<Casino />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/vouches" element={<Vouches />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
