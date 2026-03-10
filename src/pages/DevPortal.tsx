@@ -1174,7 +1174,7 @@ function VouchesView() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs text-muted-foreground block mb-1">Datum</label>
+                  <label className="text-xs text-muted-foreground block mb-1">Date</label>
                   <Input type="datetime-local"
                     value={new Date(editingVouch.display_date).toISOString().slice(0, 16)}
                     onChange={(e) => setEditingVouch({ ...editingVouch, display_date: new Date(e.target.value).toISOString() })}
