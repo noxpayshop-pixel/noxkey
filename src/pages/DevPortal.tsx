@@ -1221,7 +1221,7 @@ function VouchesView() {
               </div>
             ))}
             {displayVouches.length === 0 && (
-              <p className="text-muted-foreground text-center py-8">Keine Vouches. Importiere von SellAuth oder füge manuell hinzu.</p>
+              <p className="text-muted-foreground text-center py-8">No vouches yet. Import from SellAuth or add manually.</p>
             )}
           </div>
         </div>
