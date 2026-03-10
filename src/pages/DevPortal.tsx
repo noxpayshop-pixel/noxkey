@@ -1119,7 +1119,7 @@ function VouchesView() {
           {/* Add Form */}
           {showAddForm && (
             <div className="nox-surface border border-primary/30 rounded-xl p-4 mb-6 space-y-3">
-              <p className="text-sm font-semibold text-foreground">Neuen Vouch hinzufügen</p>
+              <p className="text-sm font-semibold text-foreground">Add New Vouch</p>
               <div className="flex gap-3">
                 <div className="w-24">
                   <label className="text-xs text-muted-foreground block mb-1">Sterne</label>
