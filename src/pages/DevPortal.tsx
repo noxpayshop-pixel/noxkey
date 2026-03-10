@@ -16,6 +16,7 @@ import {
   User, ImageIcon, Gift, Star, Coins,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import TrafficView from '@/components/TrafficView';
 
 const DEV_USER = 'TheNox';
 const DEV_PASS = 'aohgiehxlsda9bg0eeh0s0peh';
