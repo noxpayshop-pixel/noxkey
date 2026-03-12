@@ -326,6 +326,42 @@ Deno.serve(async (req) => {
         },
       })
     }
+
+    if (commandName === 'closeall') {
+      const appId = Deno.env.get('DISCORD_TICKET_APP_ID')!
+      const token = interaction.token
+
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+            headers: { Authorization: `Bot ${botToken}` },
+          })
+          const channels = await res.json()
+          const ticketChannels = channels.filter((c: any) => c.type === 0 && c.name.startsWith('ticket-'))
+          let closed = 0
+
+          for (const ch of ticketChannels) {
+            try {
+              await fetch(`https://discord.com/api/v10/channels/${ch.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bot ${botToken}` },
+              })
+              closed++
+            } catch {}
+          }
+
+          await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: `✅ ${closed} Ticket(s) geschlossen.` }),
+          })
+        } catch (e) {
+          console.error('closeall error:', e)
+        }
+      })())
+
+      return Response.json({ type: 5, data: { flags: 64 } })
+    }
   }
 
   // MESSAGE_COMPONENT
