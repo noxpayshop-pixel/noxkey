@@ -1712,21 +1712,17 @@ function EmojiUploadView() {
         </label>
       </div>
 
-      <div className="nox-surface border border-destructive/30 rounded-xl p-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Alle Emojis löschen</p>
-          <p className="text-xs text-muted-foreground">Entfernt alle Custom Emojis aus dem Discord-Server.</p>
+      <div className="flex gap-3">
+        <div className="nox-surface border border-destructive/30 rounded-xl p-4 flex items-center justify-between flex-1">
+          <div>
+            <p className="text-sm font-medium text-foreground">Alle Emojis löschen</p>
+            <p className="text-xs text-muted-foreground">Entfernt alle Custom Emojis aus dem Discord-Server.</p>
+          </div>
+          <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={deleting || uploading}>
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+            {deleting ? 'Lösche...' : 'Alle löschen'}
+          </Button>
         </div>
-        <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={deleting || uploading}>
-          {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
-          {deleting ? 'Lösche...' : 'Alle löschen'}
-        </Button>
-      </div>
-
-        <Button variant="noxOutline" size="sm" onClick={loadEmojis} disabled={loadingEmojis}>
-          {loadingEmojis ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
-          Aktualisieren
-        </Button>
       </div>
 
       {/* Emoji Liste */}
