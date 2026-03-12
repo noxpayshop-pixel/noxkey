@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
 import TicketPanelEditor from '@/components/TicketPanelEditor';
 import BotEmbedEditor from '@/components/BotEmbedEditor';
+import EmbedBuilder from '@/components/EmbedBuilder';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
