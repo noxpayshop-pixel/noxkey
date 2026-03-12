@@ -225,47 +225,68 @@ Deno.serve(async (req) => {
     }
 
     if (commandName === 'panel') {
-      const config = await getPanelConfig()
-      const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
-      const embedColor = hexColorToInt(config?.embed_color || '#7c3aed')
+      // Defer ephemeral so "xyz used /panel" is hidden
+      const appId = Deno.env.get('DISCORD_TICKET_APP_ID')!
+      const channelId = interaction.channel_id
+      const token = interaction.token
 
-      const embed: any = {
-        title: config?.embed_title || '🎫 Support Panel',
-        description: config?.embed_description || 'Create a support request with **The Nox**.',
-        color: embedColor,
-      }
-      if (config?.embed_thumbnail_url) embed.thumbnail = { url: config.embed_thumbnail_url }
-      if (config?.embed_image_url) embed.image = { url: config.embed_image_url }
-      if (config?.embed_footer_text) embed.footer = { text: config.embed_footer_text }
+      EdgeRuntime.waitUntil((async () => {
+        try {
+          const config = await getPanelConfig()
+          const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
+          const embedColor = hexColorToInt(config?.embed_color || '#7c3aed')
 
-      const dropdownOptions = ticketTypes.map((t: any) => {
-        const opt: any = { label: t.label, value: t.value, description: t.description }
-        const parsed = parseEmojiForDropdown(t.emoji)
-        if (parsed) opt.emoji = parsed
-        return opt
-      })
+          const embed: any = {
+            title: config?.embed_title || '🎫 Support Panel',
+            description: config?.embed_description || 'Create a support request with **The Nox**.',
+            color: embedColor,
+          }
+          if (config?.embed_thumbnail_url) embed.thumbnail = { url: config.embed_thumbnail_url }
+          if (config?.embed_image_url) embed.image = { url: config.embed_image_url }
+          if (config?.embed_footer_text) embed.footer = { text: config.embed_footer_text }
 
-      const dropdownComponent = {
-        type: 1,
-        components: [{
-          type: 3,
-          custom_id: 'ticket_open',
-          placeholder: config?.dropdown_placeholder || 'Choose your ticket type',
-          options: dropdownOptions,
-        }],
-      }
+          const dropdownOptions = ticketTypes.map((t: any) => {
+            const opt: any = { label: t.label, value: t.value, description: t.description }
+            const parsed = parseEmojiForDropdown(t.emoji)
+            if (parsed) opt.emoji = parsed
+            return opt
+          })
 
-      const responseData: any = {
-        embeds: [embed],
-        components: [dropdownComponent],
-      }
+          const dropdownComponent = {
+            type: 1,
+            components: [{
+              type: 3,
+              custom_id: 'ticket_open',
+              placeholder: config?.dropdown_placeholder || 'Choose your ticket type',
+              options: dropdownOptions,
+            }],
+          }
 
-      // Add message content above embed if configured
-      if (config?.panel_content) {
-        responseData.content = config.panel_content
-      }
+          const msgPayload: any = {
+            embeds: [embed],
+            components: [dropdownComponent],
+          }
+          if (config?.panel_content) msgPayload.content = config.panel_content
 
-      return Response.json({ type: 4, data: responseData })
+          // Post as bot message to the channel
+          await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+            method: 'POST',
+            headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(msgPayload),
+          })
+
+          // Edit deferred response
+          await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: '✅ Panel posted.' }),
+          })
+        } catch (e) {
+          console.error('Panel post error:', e)
+        }
+      })())
+
+      return Response.json({ type: 5, data: { flags: 64 } })
     }
 
     if (commandName === 'ping') {
