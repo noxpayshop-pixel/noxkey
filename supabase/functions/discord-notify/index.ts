@@ -67,8 +67,11 @@ Deno.serve(async (req) => {
     try {
       const { data: cfg } = await supabase.from('bot_embed_config').select('*').eq('bot_type', 'product').limit(1).single()
       if (cfg) {
-        embedTitle = cfg.embed_title || embedTitle
+        embedTitle = cfg.embed_title !== null && cfg.embed_title !== undefined ? cfg.embed_title : embedTitle
         embedDesc = cfg.embed_description || embedDesc
+        // Convert literal \n sequences from DB to actual newlines
+        embedDesc = embedDesc.replace(/\\n/g, '\n')
+        if (embedTitle) embedTitle = embedTitle.replace(/\\n/g, '\n')
         embedColor = parseInt((cfg.embed_color || '#22c55e').replace('#', ''), 16)
         embedImage = cfg.embed_image_url ?? embedImage
         embedFooter = cfg.embed_footer_text || embedFooter
