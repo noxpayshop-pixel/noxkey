@@ -1723,6 +1723,33 @@ function EmojiUploadView() {
         </Button>
       </div>
 
+        <Button variant="noxOutline" size="sm" onClick={loadEmojis} disabled={loadingEmojis}>
+          {loadingEmojis ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+          Aktualisieren
+        </Button>
+      </div>
+
+      {/* Emoji Liste */}
+      {emojiList && (
+        <div className="nox-surface border border-border/50 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Server Emojis ({emojiList.length})</h3>
+          </div>
+          {emojiList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Keine Emojis auf dem Server.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[500px] overflow-y-auto">
+              {emojiList.map((emoji) => (
+                <div key={emoji.id} className="flex items-center gap-2 nox-surface border border-border/40 rounded-lg px-3 py-2">
+                  <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
+                  <span className="text-xs font-mono text-muted-foreground truncate">:{emoji.name}:</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {summary && (
         <div className="flex gap-3 flex-wrap">
           {summary.uploaded !== undefined && (
