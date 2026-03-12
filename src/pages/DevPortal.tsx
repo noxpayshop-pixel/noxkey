@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
+import TicketPanelEditor from '@/components/TicketPanelEditor';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
@@ -85,7 +86,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -124,6 +125,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'gifts', label: 'Gifts', icon: Gift },
     { id: 'casino', label: 'Casino', icon: Coins },
     { id: 'traffic', label: 'Traffic', icon: Activity },
+    { id: 'tickets', label: 'Tickets', icon: Shield },
     { id: 'emojis', label: 'Emojis', icon: ImageIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
@@ -284,6 +286,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === 'traffic' && (
               <motion.div key="traffic" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                 <TrafficView />
+              </motion.div>
+            )}
+
+            {tab === 'tickets' && (
+              <motion.div key="tickets" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <TicketPanelEditor />
               </motion.div>
             )}
 

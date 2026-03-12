@@ -1,6 +1,9 @@
 import nacl from 'https://esm.sh/tweetnacl@1.0.3'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const TICKET_TYPES = [
+const REQUIRED_ROLE_ID = '1481337204767981841'
+
+const DEFAULT_TICKET_TYPES = [
   { label: 'Purchase Issue', value: 'purchase', emoji: '🛒', description: 'Problems with a purchase or order' },
   { label: 'Replacement', value: 'replacement', emoji: '🔄', description: 'Request a replacement for your product' },
   { label: 'General Support', value: 'support', emoji: '❓', description: 'General questions or help' },
@@ -8,14 +11,16 @@ const TICKET_TYPES = [
   { label: 'Other', value: 'other', emoji: '💬', description: 'Anything else' },
 ]
 
-const REQUIRED_ROLE_ID = '1481337204767981841'
-
 function hexToUint8Array(hex: string): Uint8Array {
   const arr = new Uint8Array(hex.length / 2)
   for (let i = 0; i < hex.length; i += 2) {
     arr[i / 2] = parseInt(hex.substring(i, i + 2), 16)
   }
   return arr
+}
+
+function hexColorToInt(hex: string): number {
+  return parseInt((hex || '#7c3aed').replace('#', ''), 16)
 }
 
 async function verifySignature(req: Request, publicKey: string): Promise<{ valid: boolean; body: string }> {
@@ -35,8 +40,38 @@ function hasRole(member: any): boolean {
   return member?.roles?.includes(REQUIRED_ROLE_ID) ?? false
 }
 
-async function createTicket(botToken: string, guildId: string, selectedValue: string, userId: string, username: string) {
-  const ticketType = TICKET_TYPES.find(t => t.value === selectedValue)
+async function getPanelConfig() {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const sb = createClient(supabaseUrl, supabaseKey)
+    const { data } = await sb.from('ticket_panel_config').select('*').limit(1).single()
+    if (data) {
+      return {
+        ...data,
+        ticket_types: typeof data.ticket_types === 'string' ? JSON.parse(data.ticket_types) : data.ticket_types,
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch panel config:', e)
+  }
+  return null
+}
+
+// Parse custom emoji string like <:name:id> or <a:name:id> into Discord emoji object
+function parseEmojiForDropdown(emojiStr: string): { name: string; id?: string; animated?: boolean } | null {
+  const customMatch = emojiStr.match(/^<(a?):(\w+):(\d+)>$/)
+  if (customMatch) {
+    return { name: customMatch[2], id: customMatch[3], animated: customMatch[1] === 'a' }
+  }
+  // Standard unicode emoji
+  return { name: emojiStr }
+}
+
+async function createTicket(botToken: string, guildId: string, selectedValue: string, userId: string, username: string, interactionToken: string) {
+  const config = await getPanelConfig()
+  const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
+  const ticketType = ticketTypes.find((t: any) => t.value === selectedValue)
   const typeLabel = ticketType?.label || selectedValue
   const typeEmoji = ticketType?.emoji || '🎫'
 
@@ -76,27 +111,27 @@ async function createTicket(botToken: string, guildId: string, selectedValue: st
 
   const ticketChannel = await createRes.json()
 
-  // Send welcome message
+  // Build welcome embed from config
+  const welcomeTitle = (config?.welcome_title || '{emoji} {label}')
+    .replace(/\{emoji\}/g, typeEmoji)
+    .replace(/\{label\}/g, typeLabel)
+  const welcomeDesc = (config?.welcome_description || 'Hey {user}, welcome to your ticket!')
+    .replace(/\{user\}/g, `<@${userId}>`)
+    .replace(/\{emoji\}/g, typeEmoji)
+    .replace(/\{label\}/g, typeLabel)
+  const welcomeColor = hexColorToInt(config?.welcome_color || '#7c3aed')
+  const welcomeFooter = config?.welcome_footer_text || 'The Nox — We Care About YOU ✦ Premium Digital Delivery'
+
   await fetch(`https://discord.com/api/v10/channels/${ticketChannel.id}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       content: `<@${userId}>`,
       embeds: [{
-        title: `${typeEmoji}  ${typeLabel}`,
-        description: [
-          `Hey <@${userId}>, welcome to your ticket!`,
-          '',
-          '## 📝 Please describe your issue',
-          '',
-          '> • What product or service is this about?',
-          '> • What exactly happened?',
-          '> • Include any screenshots, order IDs, or details.',
-          '',
-          `-# A team member will be with you shortly. Please be patient!`,
-        ].join('\n'),
-        color: 0x7c3aed,
-        footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
+        title: welcomeTitle,
+        description: welcomeDesc,
+        color: welcomeColor,
+        footer: { text: welcomeFooter },
         timestamp: new Date().toISOString(),
       }],
       components: [{
@@ -110,10 +145,7 @@ async function createTicket(botToken: string, guildId: string, selectedValue: st
     }),
   })
 
-  // Edit the original deferred response with the ticket link
-  // We use a followup message instead
   const appId = Deno.env.get('DISCORD_TICKET_APP_ID')!
-  const interactionToken = (globalThis as any).__currentInteractionToken
   if (interactionToken) {
     await fetch(`https://discord.com/api/v10/webhooks/${appId}/${interactionToken}/messages/@original`, {
       method: 'PATCH',
@@ -146,38 +178,38 @@ Deno.serve(async (req) => {
     }
 
     if (commandName === 'panel') {
+      // Fetch config from database
+      const config = await getPanelConfig()
+      const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
+      const embedColor = hexColorToInt(config?.embed_color || '#7c3aed')
+
+      const embed: any = {
+        title: config?.embed_title || '🎫 Support Panel',
+        description: config?.embed_description || 'Create a support request with **The Nox**.',
+        color: embedColor,
+      }
+      if (config?.embed_thumbnail_url) embed.thumbnail = { url: config.embed_thumbnail_url }
+      if (config?.embed_image_url) embed.image = { url: config.embed_image_url }
+      if (config?.embed_footer_text) embed.footer = { text: config.embed_footer_text }
+
+      const dropdownOptions = ticketTypes.map((t: any) => {
+        const opt: any = { label: t.label, value: t.value, description: t.description }
+        const parsed = parseEmojiForDropdown(t.emoji)
+        if (parsed) opt.emoji = parsed
+        return opt
+      })
+
       return Response.json({
         type: 4,
         data: {
-          embeds: [{
-            title: '🎫 Support Panel',
-            description: [
-              `Create a support request with **The Nox**.`,
-              '',
-              `**Professional support** tailored to your needs`,
-              `**Fast responses** — no long wait times`,
-              `**Secure & private** ticket channels`,
-              '',
-              `## ✦ Start your ticket`,
-              '',
-              `Select the service you want from the menu below to create your ticket.`,
-            ].join('\n'),
-            color: 0x7c3aed,
-            thumbnail: {
-              url: 'https://cdn.discordapp.com/icons/' + guildId + '/a_placeholder.png',
-            },
-            footer: { text: '© The Nox • Ticket System' },
-          }],
+          embeds: [embed],
           components: [{
             type: 1,
             components: [{
               type: 3,
               custom_id: 'ticket_open',
-              placeholder: 'Choose your ticket type',
-              options: TICKET_TYPES.map(t => ({
-                label: t.label, value: t.value, description: t.description,
-                emoji: { name: t.emoji },
-              })),
+              placeholder: config?.dropdown_placeholder || 'Choose your ticket type',
+              options: dropdownOptions,
             }],
           }],
         },
@@ -185,13 +217,9 @@ Deno.serve(async (req) => {
     }
 
     if (commandName === 'setup') {
-      const categoryNames = [
-        '🎫 Tickets — Purchase',
-        '🎫 Tickets — Replacement',
-        '🎫 Tickets — Support',
-        '🎫 Tickets — Bug Reports',
-        '🎫 Tickets — Other',
-      ]
+      const config = await getPanelConfig()
+      const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
+      const categoryNames = ticketTypes.map((t: any) => `🎫 Tickets — ${t.label}`)
       const created: string[] = []
       const errors: string[] = []
 
@@ -231,16 +259,12 @@ Deno.serve(async (req) => {
       const selectedValue = interaction.data.values[0]
       const userId = interaction.member.user.id
       const username = interaction.member.user.username
+      const token = interaction.token
 
-      // Store token for background task
-      ;(globalThis as any).__currentInteractionToken = interaction.token
-
-      // Defer response, do heavy work in background
       EdgeRuntime.waitUntil(
-        createTicket(botToken, guildId, selectedValue, userId, username).catch(e => console.error('Ticket creation error:', e))
+        createTicket(botToken, guildId, selectedValue, userId, username, token).catch(e => console.error('Ticket creation error:', e))
       )
 
-      // Return deferred ephemeral response (type 5 = DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE)
       return Response.json({ type: 5, data: { flags: 64 } })
     }
 
