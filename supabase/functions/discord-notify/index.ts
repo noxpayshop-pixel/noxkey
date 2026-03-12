@@ -57,6 +57,24 @@ Deno.serve(async (req) => {
       .eq('id', product_id)
       .single()
 
+    // Fetch embed config from DB
+    let embedTitle = `📦 Your {product} is ready!`
+    let embedDesc = 'Your item from the waitlist is now available!\n\n🔗 **Pick it up here:**\nhttps://noxkey.lovable.app/myclaims\n\nLog in with your Discord to view your deliverables.'
+    let embedColor = 0x22c55e
+    let embedImage: string | null = 'https://noxkey.lovable.app/images/products-banner.png'
+    let embedFooter = 'The Nox — We Care About YOU ✦ Premium Digital Delivery'
+
+    try {
+      const { data: cfg } = await supabase.from('bot_embed_config').select('*').eq('bot_type', 'product').limit(1).single()
+      if (cfg) {
+        embedTitle = cfg.embed_title || embedTitle
+        embedDesc = cfg.embed_description || embedDesc
+        embedColor = parseInt((cfg.embed_color || '#22c55e').replace('#', ''), 16)
+        embedImage = cfg.embed_image_url ?? embedImage
+        embedFooter = cfg.embed_footer_text || embedFooter
+      }
+    } catch {}
+
     const results: Array<{ discord: string; status: string; error?: string }> = []
     const deliverCount = Math.min(waitlistEntries.length, stockItems.length)
 

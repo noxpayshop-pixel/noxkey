@@ -22,6 +22,16 @@ Deno.serve(async (req) => {
       description: 'Create all ticket categories in the server',
       type: 1,
     },
+    {
+      name: 'ping',
+      description: 'Send a DM reminder to the ticket owner',
+      type: 1,
+    },
+    {
+      name: 'closeall',
+      description: 'Close all open tickets in the server',
+      type: 1,
+    },
   ]
 
   try {

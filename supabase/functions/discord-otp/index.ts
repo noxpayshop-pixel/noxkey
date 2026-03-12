@@ -94,16 +94,34 @@ Deno.serve(async (req) => {
 
     const dm = await dmRes.json()
 
+    // Fetch embed config from DB
+    let embedTitle = '🔐 The Nox — Verification Code'
+    let embedDesc = `Your one-time verification code is:\n\n# \`${code}\`\n\nThis code expires in **5 minutes**.\nDo not share this code with anyone.`
+    let embedColor = 0x7c3aed
+    let embedImage = 'https://noxkey.lovable.app/images/otp-banner.png'
+    let embedFooter = 'The Nox — We Care About YOU ✦ Premium Digital Delivery'
+
+    try {
+      const { data: cfg } = await supabase.from('bot_embed_config').select('*').eq('bot_type', 'otp').limit(1).single()
+      if (cfg) {
+        embedTitle = (cfg.embed_title || embedTitle).replace(/\{code\}/g, code)
+        embedDesc = (cfg.embed_description || embedDesc).replace(/\{code\}/g, code)
+        embedColor = parseInt((cfg.embed_color || '#7c3aed').replace('#', ''), 16)
+        embedImage = cfg.embed_image_url || embedImage
+        embedFooter = cfg.embed_footer_text || embedFooter
+      }
+    } catch {}
+
     await fetch(`https://discord.com/api/v10/channels/${dm.id}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         embeds: [{
-          title: '🔐 The Nox — Verification Code',
-          description: `Your one-time verification code is:\n\n# \`${code}\`\n\nThis code expires in **5 minutes**.\nDo not share this code with anyone.`,
-          color: 0x7c3aed,
-          image: { url: 'https://noxkey.lovable.app/images/otp-banner.png' },
-          footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
+          title: embedTitle,
+          description: embedDesc,
+          color: embedColor,
+          image: embedImage ? { url: embedImage } : undefined,
+          footer: { text: embedFooter },
           timestamp: new Date().toISOString(),
         }],
       }),
