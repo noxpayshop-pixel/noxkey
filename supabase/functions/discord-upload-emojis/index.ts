@@ -97,9 +97,14 @@ Deno.serve(async (req) => {
       const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'))
 
       const baseName = filename.split('/').pop()!.replace(/\.[^.]+$/, '')
-      const emojiName = baseName.replace(/^colored_colored_/i, '').replace(/^colored_/i, '').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 32)
+      let emojiName = baseName
+      // Remove all "colored_" prefixes repeatedly
+      while (emojiName.toLowerCase().startsWith('colored_')) {
+        emojiName = emojiName.substring(8)
+      }
+      emojiName = emojiName.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 32)
       if (emojiName.length < 2) {
-        results.push({ name: filename, status: 'skipped', error: 'Name too short' })
+        results.push({ name: baseName, status: 'skipped', error: 'Name too short' })
         continue
       }
 
@@ -109,23 +114,34 @@ Deno.serve(async (req) => {
         const mimeType = ext === '.png' ? 'image/png' : ext === '.gif' ? 'image/gif' : 'image/jpeg'
         const dataUri = `data:${mimeType};base64,${base64}`
 
-        const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bot ${botToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name: emojiName, image: dataUri }),
-        })
+        let res: Response | null = null
+        for (let attempt = 0; attempt < 5; attempt++) {
+          res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bot ${botToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: emojiName, image: dataUri }),
+          })
 
-        if (res.ok) {
+          if (res.status === 429) {
+            const retryData = await res.json()
+            const retryAfter = (retryData.retry_after || 5) * 1000
+            await new Promise((r) => setTimeout(r, retryAfter + 500))
+            continue
+          }
+          break
+        }
+
+        if (res && res.ok) {
           results.push({ name: emojiName, status: 'uploaded' })
         } else {
-          const err = await res.json()
+          const err = res ? await res.json() : { message: 'No response' }
           results.push({ name: emojiName, status: 'failed', error: err.message || JSON.stringify(err) })
         }
 
-        await new Promise((r) => setTimeout(r, 1500))
+        await new Promise((r) => setTimeout(r, 3000))
       } catch (err) {
         results.push({ name: emojiName, status: 'failed', error: String(err) })
       }
