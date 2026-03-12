@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         embeds: [{
-          title: embedTitle,
+          title: embedTitle || undefined,
           description: embedDesc,
           color: embedColor,
           image: embedImage ? { url: embedImage } : undefined,

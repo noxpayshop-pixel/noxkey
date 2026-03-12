@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 embeds: [
                   {
-                    title: finalTitle,
+                    title: finalTitle || undefined,
                     description: finalDesc,
                     color: embedColor,
                     image: embedImage ? { url: embedImage } : undefined,
