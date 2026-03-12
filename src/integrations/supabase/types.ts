@@ -427,6 +427,57 @@ export type Database = {
           },
         ]
       }
+      ticket_panel_config: {
+        Row: {
+          dropdown_placeholder: string | null
+          embed_color: string
+          embed_description: string
+          embed_footer_text: string | null
+          embed_image_url: string | null
+          embed_thumbnail_url: string | null
+          embed_title: string
+          id: string
+          ticket_types: Json
+          updated_at: string
+          welcome_color: string | null
+          welcome_description: string | null
+          welcome_footer_text: string | null
+          welcome_title: string | null
+        }
+        Insert: {
+          dropdown_placeholder?: string | null
+          embed_color?: string
+          embed_description?: string
+          embed_footer_text?: string | null
+          embed_image_url?: string | null
+          embed_thumbnail_url?: string | null
+          embed_title?: string
+          id?: string
+          ticket_types?: Json
+          updated_at?: string
+          welcome_color?: string | null
+          welcome_description?: string | null
+          welcome_footer_text?: string | null
+          welcome_title?: string | null
+        }
+        Update: {
+          dropdown_placeholder?: string | null
+          embed_color?: string
+          embed_description?: string
+          embed_footer_text?: string | null
+          embed_image_url?: string | null
+          embed_thumbnail_url?: string | null
+          embed_title?: string
+          id?: string
+          ticket_types?: Json
+          updated_at?: string
+          welcome_color?: string | null
+          welcome_description?: string | null
+          welcome_footer_text?: string | null
+          welcome_title?: string | null
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           casino_chance_modifier: number
