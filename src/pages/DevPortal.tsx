@@ -124,6 +124,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'gifts', label: 'Gifts', icon: Gift },
     { id: 'casino', label: 'Casino', icon: Coins },
     { id: 'traffic', label: 'Traffic', icon: Activity },
+    { id: 'tickets', label: 'Tickets', icon: Shield },
     { id: 'emojis', label: 'Emojis', icon: ImageIcon },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
