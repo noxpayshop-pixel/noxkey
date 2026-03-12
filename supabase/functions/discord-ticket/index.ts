@@ -150,19 +150,22 @@ Deno.serve(async (req) => {
         type: 4,
         data: {
           embeds: [{
-            title: '🎫  Support Panel',
+            title: '🎫 Support Panel',
             description: [
-              'Open a support ticket with **The Nox**.',
+              `Create a support request with **The Nox**.`,
               '',
-              '**Professional support** tailored to your needs',
-              '**Fast responses** — no long wait times',
-              '**Secure & private** ticket channels',
+              `**Professional support** tailored to your needs`,
+              `**Fast responses** — no long wait times`,
+              `**Secure & private** ticket channels`,
               '',
-              '## ✦ Start your ticket',
+              `## ✦ Start your ticket`,
               '',
-              'Select the category from the menu below to create your ticket.',
+              `Select the service you want from the menu below to create your ticket.`,
             ].join('\n'),
             color: 0x7c3aed,
+            thumbnail: {
+              url: 'https://cdn.discordapp.com/icons/' + guildId + '/a_placeholder.png',
+            },
             footer: { text: '© The Nox • Ticket System' },
           }],
           components: [{
