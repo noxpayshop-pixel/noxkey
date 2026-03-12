@@ -1730,6 +1730,9 @@ function EmojiUploadView() {
         <div className="nox-surface border border-border/50 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">Server Emojis ({emojiList.length})</h3>
+            <Button variant="ghost" size="sm" onClick={loadEmojis} disabled={loadingEmojis}>
+              {loadingEmojis ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            </Button>
           </div>
           {emojiList.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">Keine Emojis auf dem Server.</p>
