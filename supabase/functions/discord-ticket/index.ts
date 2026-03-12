@@ -237,10 +237,10 @@ Deno.serve(async (req) => {
           const embedColor = hexColorToInt(config?.embed_color || '#7c3aed')
 
           const embed: any = {
-            title: config?.embed_title || '🎫 Support Panel',
             description: config?.embed_description || 'Create a support request with **The Nox**.',
             color: embedColor,
           }
+          if (config?.embed_title) embed.title = config.embed_title
           if (config?.embed_thumbnail_url) embed.thumbnail = { url: config.embed_thumbnail_url }
           if (config?.embed_image_url) embed.image = { url: config.embed_image_url }
           if (config?.embed_footer_text) embed.footer = { text: config.embed_footer_text }

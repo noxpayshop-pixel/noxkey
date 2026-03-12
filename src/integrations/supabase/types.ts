@@ -436,7 +436,7 @@ export type Database = {
           embed_footer_text: string | null
           embed_image_url: string | null
           embed_thumbnail_url: string | null
-          embed_title: string
+          embed_title: string | null
           id: string
           panel_content: string | null
           ping_dm_message: string | null
@@ -455,7 +455,7 @@ export type Database = {
           embed_footer_text?: string | null
           embed_image_url?: string | null
           embed_thumbnail_url?: string | null
-          embed_title?: string
+          embed_title?: string | null
           id?: string
           panel_content?: string | null
           ping_dm_message?: string | null
@@ -474,7 +474,7 @@ export type Database = {
           embed_footer_text?: string | null
           embed_image_url?: string | null
           embed_thumbnail_url?: string | null
-          embed_title?: string
+          embed_title?: string | null
           id?: string
           panel_content?: string | null
           ping_dm_message?: string | null

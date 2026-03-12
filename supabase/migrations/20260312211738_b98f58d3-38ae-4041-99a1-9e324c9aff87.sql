@@ -1,0 +1,1 @@
+ALTER TABLE public.ticket_panel_config ALTER COLUMN embed_title SET DEFAULT '', ALTER COLUMN embed_title DROP NOT NULL;
