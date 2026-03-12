@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'))
 
       const baseName = filename.split('/').pop()!.replace(/\.[^.]+$/, '')
-      const emojiName = baseName.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 32)
+      const emojiName = baseName.replace(/^colored_colored_/i, '').replace(/^colored_/i, '').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 32)
       if (emojiName.length < 2) {
         results.push({ name: filename, status: 'skipped', error: 'Name too short' })
         continue
