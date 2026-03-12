@@ -99,13 +99,16 @@ Deno.serve(async (req) => {
     let embedDesc = `Your one-time verification code is:\n\n# \`${code}\`\n\nThis code expires in **5 minutes**.\nDo not share this code with anyone.`
     let embedColor = 0x7c3aed
     let embedImage = 'https://noxkey.lovable.app/images/otp-banner.png'
-    let embedFooter = 'The Nox — We Care About YOU ✦ Premium Digital Delivery'
+    let embedFooter = 'The Nox — We Care About YOU ✦'
 
     try {
       const { data: cfg } = await supabase.from('bot_embed_config').select('*').eq('bot_type', 'otp').limit(1).single()
       if (cfg) {
         embedTitle = (cfg.embed_title || embedTitle).replace(/\{code\}/g, code)
         embedDesc = (cfg.embed_description || embedDesc).replace(/\{code\}/g, code)
+        // Convert literal \n sequences from DB to actual newlines
+        embedDesc = embedDesc.replace(/\\n/g, '\n')
+        embedTitle = embedTitle.replace(/\\n/g, '\n')
         embedColor = parseInt((cfg.embed_color || '#7c3aed').replace('#', ''), 16)
         embedImage = cfg.embed_image_url || embedImage
         embedFooter = cfg.embed_footer_text || embedFooter

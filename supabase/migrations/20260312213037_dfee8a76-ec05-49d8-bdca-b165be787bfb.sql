@@ -1,0 +1,1 @@
+UPDATE bot_embed_config SET embed_footer_text = 'The Nox — We Care About YOU ✦' WHERE bot_type = 'otp' AND embed_footer_text LIKE '%Premium Digital Delivery%';
