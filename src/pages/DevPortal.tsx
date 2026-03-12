@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
+import TicketPanelEditor from '@/components/TicketPanelEditor';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
