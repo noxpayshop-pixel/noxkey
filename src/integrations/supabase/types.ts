@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      bot_embed_config: {
+        Row: {
+          bot_type: string
+          embed_color: string | null
+          embed_description: string | null
+          embed_footer_text: string | null
+          embed_image_url: string | null
+          embed_title: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          bot_type: string
+          embed_color?: string | null
+          embed_description?: string | null
+          embed_footer_text?: string | null
+          embed_image_url?: string | null
+          embed_title?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          bot_type?: string
+          embed_color?: string | null
+          embed_description?: string | null
+          embed_footer_text?: string | null
+          embed_image_url?: string | null
+          embed_title?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       casino_bets: {
         Row: {
           bet_amount: number

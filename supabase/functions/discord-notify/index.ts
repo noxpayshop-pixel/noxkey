@@ -57,6 +57,24 @@ Deno.serve(async (req) => {
       .eq('id', product_id)
       .single()
 
+    // Fetch embed config from DB
+    let embedTitle = `📦 Your {product} is ready!`
+    let embedDesc = 'Your item from the waitlist is now available!\n\n🔗 **Pick it up here:**\nhttps://noxkey.lovable.app/myclaims\n\nLog in with your Discord to view your deliverables.'
+    let embedColor = 0x22c55e
+    let embedImage: string | null = 'https://noxkey.lovable.app/images/products-banner.png'
+    let embedFooter = 'The Nox — We Care About YOU ✦ Premium Digital Delivery'
+
+    try {
+      const { data: cfg } = await supabase.from('bot_embed_config').select('*').eq('bot_type', 'product').limit(1).single()
+      if (cfg) {
+        embedTitle = cfg.embed_title || embedTitle
+        embedDesc = cfg.embed_description || embedDesc
+        embedColor = parseInt((cfg.embed_color || '#22c55e').replace('#', ''), 16)
+        embedImage = cfg.embed_image_url ?? embedImage
+        embedFooter = cfg.embed_footer_text || embedFooter
+      }
+    } catch {}
+
     const results: Array<{ discord: string; status: string; error?: string }> = []
     const deliverCount = Math.min(waitlistEntries.length, stockItems.length)
 
@@ -106,7 +124,11 @@ Deno.serve(async (req) => {
           const dmChannel = await dmRes.json()
 
           if (dmChannel.id) {
-            // Send notification embed (NOT the item itself — user picks it up on the website)
+            const productName = product?.name || 'product'
+            const finalTitle = embedTitle.replace(/\{product\}/g, productName)
+            const finalDesc = embedDesc.replace(/\{product\}/g, productName)
+
+            // Send notification embed
             await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
               method: 'POST',
               headers: {
@@ -116,18 +138,11 @@ Deno.serve(async (req) => {
               body: JSON.stringify({
                 embeds: [
                   {
-                    title: `📦 Your ${product?.name || 'product'} is ready!`,
-                    description: [
-                      'Your item from the waitlist is now available!',
-                      '',
-                      '🔗 **Pick it up here:**',
-                      'https://noxkey.lovable.app/myclaims',
-                      '',
-                      'Log in with your Discord to view your deliverables.',
-                    ].join('\n'),
-                    color: 0x22c55e,
-                    image: { url: 'https://noxkey.lovable.app/images/products-banner.png' },
-                    footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
+                    title: finalTitle,
+                    description: finalDesc,
+                    color: embedColor,
+                    image: embedImage ? { url: embedImage } : undefined,
+                    footer: { text: embedFooter },
                     timestamp: new Date().toISOString(),
                   },
                 ],
