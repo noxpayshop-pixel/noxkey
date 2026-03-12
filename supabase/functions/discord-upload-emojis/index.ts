@@ -27,8 +27,59 @@ Deno.serve(async (req) => {
   const guildId = Deno.env.get('DISCORD_GUILD_ID')!
 
   try {
-    const zipData = await req.arrayBuffer()
+    const contentType = req.headers.get('content-type') || ''
 
+    // JSON action request (e.g. delete all)
+    if (contentType.includes('application/json')) {
+      const { action } = await req.json()
+
+      if (action === 'delete_all') {
+        // Fetch all emojis
+        const listRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
+          headers: { Authorization: `Bot ${botToken}` },
+        })
+        if (!listRes.ok) {
+          const err = await listRes.json()
+          return new Response(JSON.stringify({ error: 'Failed to list emojis', details: err }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        const emojis = await listRes.json()
+        const results: Array<{ name: string; status: string; error?: string }> = []
+
+        for (const emoji of emojis) {
+          try {
+            const delRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis/${emoji.id}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bot ${botToken}` },
+            })
+            if (delRes.ok || delRes.status === 204) {
+              results.push({ name: emoji.name, status: 'deleted' })
+            } else {
+              const err = await delRes.json()
+              results.push({ name: emoji.name, status: 'failed', error: err.message || JSON.stringify(err) })
+            }
+            await new Promise((r) => setTimeout(r, 1000))
+          } catch (err) {
+            results.push({ name: emoji.name, status: 'failed', error: String(err) })
+          }
+        }
+
+        const deleted = results.filter((r) => r.status === 'deleted').length
+        return new Response(
+          JSON.stringify({ deleted, failed: results.length - deleted, total: results.length, results }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      return new Response(JSON.stringify({ error: 'Unknown action' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Binary ZIP upload
+    const zipData = await req.arrayBuffer()
     const zip = new JSZip()
     await zip.loadAsync(zipData)
 
@@ -74,7 +125,6 @@ Deno.serve(async (req) => {
           results.push({ name: emojiName, status: 'failed', error: err.message || JSON.stringify(err) })
         }
 
-        // Rate limit delay
         await new Promise((r) => setTimeout(r, 1500))
       } catch (err) {
         results.push({ name: emojiName, status: 'failed', error: String(err) })
@@ -90,7 +140,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
-    console.error('Error processing emoji upload:', err)
+    console.error('Error:', err)
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

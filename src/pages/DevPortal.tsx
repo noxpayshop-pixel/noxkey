@@ -1597,8 +1597,9 @@ function CasinoAdminView() {
 
 function EmojiUploadView() {
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [results, setResults] = useState<Array<{ name: string; status: string; error?: string }> | null>(null);
-  const [summary, setSummary] = useState<{ uploaded: number; failed: number; skipped: number } | null>(null);
+  const [summary, setSummary] = useState<{ uploaded?: number; failed?: number; skipped?: number; deleted?: number } | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1635,6 +1636,34 @@ function EmojiUploadView() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (!confirm('Alle Custom Emojis aus dem Server löschen? Das kann nicht rückgängig gemacht werden!')) return;
+
+    setDeleting(true);
+    setResults(null);
+    setSummary(null);
+
+    try {
+      const response = await supabase.functions.invoke('discord-upload-emojis', {
+        body: { action: 'delete_all' },
+      });
+
+      if (response.error) {
+        toast.error('Löschen fehlgeschlagen: ' + response.error.message);
+      } else {
+        const data = response.data;
+        setSummary({ deleted: data.deleted, failed: data.failed });
+        setResults(data.results);
+        if (data.deleted > 0) toast.success(`${data.deleted} Emojis gelöscht!`);
+        if (data.failed > 0) toast.error(`${data.failed} fehlgeschlagen`);
+      }
+    } catch (err) {
+      toast.error('Fehler: ' + String(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
@@ -1655,24 +1684,47 @@ function EmojiUploadView() {
               <span className="text-sm text-muted-foreground">ZIP-Datei auswählen</span>
             </>
           )}
-          <input type="file" accept=".zip" className="hidden" onChange={handleUpload} disabled={uploading} />
+          <input type="file" accept=".zip" className="hidden" onChange={handleUpload} disabled={uploading || deleting} />
         </label>
       </div>
 
+      <div className="nox-surface border border-destructive/30 rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Alle Emojis löschen</p>
+          <p className="text-xs text-muted-foreground">Entfernt alle Custom Emojis aus dem Discord-Server.</p>
+        </div>
+        <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={deleting || uploading}>
+          {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+          {deleting ? 'Lösche...' : 'Alle löschen'}
+        </Button>
+      </div>
+
       {summary && (
-        <div className="flex gap-3">
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="w-4 h-4 text-green-400" />
-            <span className="text-foreground">{summary.uploaded} hochgeladen</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <XCircle className="w-4 h-4 text-destructive" />
-            <span className="text-foreground">{summary.failed} fehlgeschlagen</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <ArrowRight className="w-4 h-4 text-muted-foreground" />
-            <span className="text-foreground">{summary.skipped} übersprungen</span>
-          </div>
+        <div className="flex gap-3 flex-wrap">
+          {summary.uploaded !== undefined && (
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <span className="text-foreground">{summary.uploaded} hochgeladen</span>
+            </div>
+          )}
+          {summary.deleted !== undefined && (
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <span className="text-foreground">{summary.deleted} gelöscht</span>
+            </div>
+          )}
+          {summary.failed !== undefined && summary.failed > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <XCircle className="w-4 h-4 text-destructive" />
+              <span className="text-foreground">{summary.failed} fehlgeschlagen</span>
+            </div>
+          )}
+          {summary.skipped !== undefined && summary.skipped > 0 && (
+            <div className="flex items-center gap-2 text-sm">
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              <span className="text-foreground">{summary.skipped} übersprungen</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -1681,7 +1733,7 @@ function EmojiUploadView() {
           {results.map((r, i) => (
             <div key={i} className="nox-surface border border-border/40 rounded-lg px-3 py-2 flex items-center justify-between text-sm">
               <span className="text-foreground font-mono">{r.name}</span>
-              <span className={r.status === 'uploaded' ? 'text-green-400' : r.status === 'skipped' ? 'text-muted-foreground' : 'text-destructive'}>
+              <span className={r.status === 'uploaded' || r.status === 'deleted' ? 'text-green-400' : r.status === 'skipped' ? 'text-muted-foreground' : 'text-destructive'}>
                 {r.status}{r.error ? ` — ${r.error}` : ''}
               </span>
             </div>
