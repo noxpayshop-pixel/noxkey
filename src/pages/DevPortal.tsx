@@ -1595,4 +1595,101 @@ function CasinoAdminView() {
   );
 }
 
+function EmojiUploadView() {
+  const [uploading, setUploading] = useState(false);
+  const [results, setResults] = useState<Array<{ name: string; status: string; error?: string }> | null>(null);
+  const [summary, setSummary] = useState<{ uploaded: number; failed: number; skipped: number } | null>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.zip')) {
+      toast.error('Bitte eine .zip Datei auswählen');
+      return;
+    }
+
+    setUploading(true);
+    setResults(null);
+    setSummary(null);
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const response = await supabase.functions.invoke('discord-upload-emojis', {
+        body: arrayBuffer,
+      });
+
+      if (response.error) {
+        toast.error('Upload fehlgeschlagen: ' + response.error.message);
+      } else {
+        const data = response.data;
+        setSummary({ uploaded: data.uploaded, failed: data.failed, skipped: data.skipped });
+        setResults(data.results);
+        if (data.uploaded > 0) toast.success(`${data.uploaded} Emojis hochgeladen!`);
+        if (data.failed > 0) toast.error(`${data.failed} Emojis fehlgeschlagen`);
+      }
+    } catch (err) {
+      toast.error('Fehler: ' + String(err));
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-1">Emoji Upload</h2>
+        <p className="text-sm text-muted-foreground">Lade eine .zip mit Emoji-Bildern hoch (PNG/JPG/GIF, max 256KB pro Bild, 128×128px empfohlen). Der Dateiname wird zum Emoji-Namen.</p>
+      </div>
+
+      <div className="nox-surface border border-border/50 rounded-xl p-6">
+        <label className="flex flex-col items-center justify-center gap-3 cursor-pointer py-8 border-2 border-dashed border-border/60 rounded-lg hover:border-primary/40 transition-colors">
+          {uploading ? (
+            <>
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Emojis werden hochgeladen...</span>
+            </>
+          ) : (
+            <>
+              <ImageIcon className="w-8 h-8 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">ZIP-Datei auswählen</span>
+            </>
+          )}
+          <input type="file" accept=".zip" className="hidden" onChange={handleUpload} disabled={uploading} />
+        </label>
+      </div>
+
+      {summary && (
+        <div className="flex gap-3">
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle2 className="w-4 h-4 text-green-400" />
+            <span className="text-foreground">{summary.uploaded} hochgeladen</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <XCircle className="w-4 h-4 text-destructive" />
+            <span className="text-foreground">{summary.failed} fehlgeschlagen</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            <span className="text-foreground">{summary.skipped} übersprungen</span>
+          </div>
+        </div>
+      )}
+
+      {results && results.length > 0 && (
+        <div className="space-y-1 max-h-[400px] overflow-y-auto">
+          {results.map((r, i) => (
+            <div key={i} className="nox-surface border border-border/40 rounded-lg px-3 py-2 flex items-center justify-between text-sm">
+              <span className="text-foreground font-mono">{r.name}</span>
+              <span className={r.status === 'uploaded' ? 'text-green-400' : r.status === 'skipped' ? 'text-muted-foreground' : 'text-destructive'}>
+                {r.status}{r.error ? ` — ${r.error}` : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default DevPortal;
