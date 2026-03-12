@@ -430,6 +430,7 @@ export type Database = {
       ticket_panel_config: {
         Row: {
           dropdown_placeholder: string | null
+          dropdown_position: string | null
           embed_color: string
           embed_description: string
           embed_footer_text: string | null
@@ -437,6 +438,8 @@ export type Database = {
           embed_thumbnail_url: string | null
           embed_title: string
           id: string
+          panel_content: string | null
+          ping_dm_message: string | null
           ticket_types: Json
           updated_at: string
           welcome_color: string | null
@@ -446,6 +449,7 @@ export type Database = {
         }
         Insert: {
           dropdown_placeholder?: string | null
+          dropdown_position?: string | null
           embed_color?: string
           embed_description?: string
           embed_footer_text?: string | null
@@ -453,6 +457,8 @@ export type Database = {
           embed_thumbnail_url?: string | null
           embed_title?: string
           id?: string
+          panel_content?: string | null
+          ping_dm_message?: string | null
           ticket_types?: Json
           updated_at?: string
           welcome_color?: string | null
@@ -462,6 +468,7 @@ export type Database = {
         }
         Update: {
           dropdown_placeholder?: string | null
+          dropdown_position?: string | null
           embed_color?: string
           embed_description?: string
           embed_footer_text?: string | null
@@ -469,6 +476,8 @@ export type Database = {
           embed_thumbnail_url?: string | null
           embed_title?: string
           id?: string
+          panel_content?: string | null
+          ping_dm_message?: string | null
           ticket_types?: Json
           updated_at?: string
           welcome_color?: string | null
