@@ -1598,8 +1598,32 @@ function CasinoAdminView() {
 function EmojiUploadView() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadingEmojis, setLoadingEmojis] = useState(false);
+  const [emojiList, setEmojiList] = useState<Array<{ id: string; name: string; animated: boolean; url: string }> | null>(null);
   const [results, setResults] = useState<Array<{ name: string; status: string; error?: string }> | null>(null);
   const [summary, setSummary] = useState<{ uploaded?: number; failed?: number; skipped?: number; deleted?: number } | null>(null);
+
+  const loadEmojis = async () => {
+    setLoadingEmojis(true);
+    try {
+      const response = await supabase.functions.invoke('discord-upload-emojis', {
+        body: { action: 'list' },
+      });
+      if (response.error) {
+        toast.error('Emojis laden fehlgeschlagen: ' + response.error.message);
+      } else {
+        setEmojiList(response.data.emojis);
+      }
+    } catch (err) {
+      toast.error('Fehler: ' + String(err));
+    } finally {
+      setLoadingEmojis(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEmojis();
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1688,16 +1712,42 @@ function EmojiUploadView() {
         </label>
       </div>
 
-      <div className="nox-surface border border-destructive/30 rounded-xl p-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Alle Emojis löschen</p>
-          <p className="text-xs text-muted-foreground">Entfernt alle Custom Emojis aus dem Discord-Server.</p>
+      <div className="flex gap-3">
+        <div className="nox-surface border border-destructive/30 rounded-xl p-4 flex items-center justify-between flex-1">
+          <div>
+            <p className="text-sm font-medium text-foreground">Alle Emojis löschen</p>
+            <p className="text-xs text-muted-foreground">Entfernt alle Custom Emojis aus dem Discord-Server.</p>
+          </div>
+          <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={deleting || uploading}>
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+            {deleting ? 'Lösche...' : 'Alle löschen'}
+          </Button>
         </div>
-        <Button variant="destructive" size="sm" onClick={handleDeleteAll} disabled={deleting || uploading}>
-          {deleting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
-          {deleting ? 'Lösche...' : 'Alle löschen'}
-        </Button>
       </div>
+
+      {/* Emoji Liste */}
+      {emojiList && (
+        <div className="nox-surface border border-border/50 rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Server Emojis ({emojiList.length})</h3>
+            <Button variant="ghost" size="sm" onClick={loadEmojis} disabled={loadingEmojis}>
+              {loadingEmojis ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            </Button>
+          </div>
+          {emojiList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Keine Emojis auf dem Server.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[500px] overflow-y-auto">
+              {emojiList.map((emoji) => (
+                <div key={emoji.id} className="flex items-center gap-2 nox-surface border border-border/40 rounded-lg px-3 py-2">
+                  <img src={emoji.url} alt={emoji.name} className="w-6 h-6 object-contain" />
+                  <span className="text-xs font-mono text-muted-foreground truncate">:{emoji.name}:</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {summary && (
         <div className="flex gap-3 flex-wrap">

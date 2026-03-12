@@ -33,6 +33,28 @@ Deno.serve(async (req) => {
     if (contentType.includes('application/json')) {
       const { action } = await req.json()
 
+      if (action === 'list') {
+        const listRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
+          headers: { Authorization: `Bot ${botToken}` },
+        })
+        if (!listRes.ok) {
+          const err = await listRes.json()
+          return new Response(JSON.stringify({ error: 'Failed to list emojis', details: err }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        const emojis = await listRes.json()
+        const emojiList = emojis.map((e: any) => ({
+          id: e.id,
+          name: e.name,
+          animated: e.animated || false,
+          url: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? 'gif' : 'png'}`,
+        }))
+        return new Response(JSON.stringify({ emojis: emojiList, total: emojiList.length }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       if (action === 'delete_all') {
         // Fetch all emojis
         const listRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
