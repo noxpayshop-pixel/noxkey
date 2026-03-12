@@ -291,8 +291,14 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             )}
 
             {tab === 'tickets' && (
-              <motion.div key="tickets" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              <motion.div key="tickets" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-8">
                 <TicketPanelEditor />
+                <div className="border-t border-border/40 pt-8">
+                  <BotEmbedEditor botType="otp" />
+                </div>
+                <div className="border-t border-border/40 pt-8">
+                  <BotEmbedEditor botType="product" />
+                </div>
               </motion.div>
             )}
 
