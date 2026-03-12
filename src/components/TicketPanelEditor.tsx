@@ -3,9 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Trash2, Save, Eye, Smile, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Eye, Smile, RefreshCw, MessageSquare, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface TicketType {
   label: string;
@@ -28,6 +30,9 @@ interface PanelConfig {
   welcome_description: string | null;
   welcome_color: string | null;
   welcome_footer_text: string | null;
+  panel_content: string | null;
+  dropdown_position: string | null;
+  ping_dm_message: string | null;
 }
 
 interface GuildEmoji {
@@ -92,7 +97,7 @@ export default function TicketPanelEditor() {
   const [emojis, setEmojis] = useState<GuildEmoji[]>([]);
   const [loadingEmojis, setLoadingEmojis] = useState(false);
   const [emojiPickerFor, setEmojiPickerFor] = useState<string | null>(null);
-  const [previewTab, setPreviewTab] = useState<'panel' | 'welcome'>('panel');
+  const [previewTab, setPreviewTab] = useState<'panel' | 'welcome' | 'ping'>('panel');
 
   const fetchConfig = useCallback(async () => {
     setLoading(true);
@@ -105,6 +110,9 @@ export default function TicketPanelEditor() {
       setConfig({
         ...data,
         ticket_types: (typeof data.ticket_types === 'string' ? JSON.parse(data.ticket_types) : data.ticket_types) as TicketType[],
+        panel_content: (data as any).panel_content ?? '',
+        dropdown_position: (data as any).dropdown_position ?? 'inside',
+        ping_dm_message: (data as any).ping_dm_message ?? '',
       });
     }
     setLoading(false);
@@ -139,7 +147,10 @@ export default function TicketPanelEditor() {
         welcome_description: config.welcome_description,
         welcome_color: config.welcome_color,
         welcome_footer_text: config.welcome_footer_text,
-      })
+        panel_content: config.panel_content,
+        dropdown_position: config.dropdown_position,
+        ping_dm_message: config.ping_dm_message,
+      } as any)
       .eq('id', config.id);
     setSaving(false);
     if (error) toast.error('Failed to save');
@@ -176,20 +187,14 @@ export default function TicketPanelEditor() {
     if (!config) return;
     if (fieldId === 'embed_title') update('embed_title', config.embed_title + ' ' + emojiText);
     else if (fieldId === 'embed_description') update('embed_description', config.embed_description + ' ' + emojiText);
+    else if (fieldId === 'panel_content') update('panel_content', (config.panel_content || '') + ' ' + emojiText);
     else if (fieldId === 'welcome_title') update('welcome_title', (config.welcome_title || '') + ' ' + emojiText);
     else if (fieldId === 'welcome_description') update('welcome_description', (config.welcome_description || '') + ' ' + emojiText);
+    else if (fieldId === 'ping_dm_message') update('ping_dm_message', (config.ping_dm_message || '') + ' ' + emojiText);
     else if (fieldId.startsWith('tt_emoji_')) {
       const idx = parseInt(fieldId.replace('tt_emoji_', ''));
       updateTicketType(idx, 'emoji', emojiText);
     }
-  };
-
-  // Render emoji strings for preview (convert <:name:id> to img tags)
-  const renderPreviewText = (text: string) => {
-    return text.replace(/<(a?):(\w+):(\d+)>/g, (_, animated, name, id) => {
-      const ext = animated ? 'gif' : 'png';
-      return `![${name}](https://cdn.discordapp.com/emojis/${id}.${ext}?size=20)`;
-    });
   };
 
   if (loading) {
@@ -199,8 +204,6 @@ export default function TicketPanelEditor() {
   if (!config) {
     return <p className="text-muted-foreground text-center py-12">No config found.</p>;
   }
-
-  const panelColor = hexToDecimal(config.embed_color);
 
   return (
     <div className="space-y-6">
@@ -226,8 +229,25 @@ export default function TicketPanelEditor() {
               <Eye className="w-4 h-4 text-primary" /> Panel Embed
             </h3>
 
+            {/* Message content (heading above embed) */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Title</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Message Content (above embed)</label>
+              <div className="relative">
+                <Textarea value={config.panel_content || ''} onChange={e => update('panel_content', e.target.value)}
+                  placeholder="Text that appears above the embed (supports Discord markdown)"
+                  className="bg-background/50 border-border/60 min-h-[60px] font-mono text-xs" />
+                <button onClick={() => setEmojiPickerFor(emojiPickerFor === 'panel_content' ? null : 'panel_content')}
+                  className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
+                  <Smile className="w-4 h-4" />
+                </button>
+                {emojiPickerFor === 'panel_content' && (
+                  <EmojiPicker emojis={emojis} onSelect={t => insertEmojiAtField('panel_content', t)} onClose={() => setEmojiPickerFor(null)} />
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Embed Title</label>
               <div className="relative">
                 <Input value={config.embed_title} onChange={e => update('embed_title', e.target.value)}
                   className="bg-background/50 border-border/60 pr-10" />
@@ -291,6 +311,28 @@ export default function TicketPanelEditor() {
               <Input value={config.dropdown_placeholder || ''} onChange={e => update('dropdown_placeholder', e.target.value)}
                 className="bg-background/50 border-border/60" />
             </div>
+
+            {/* Dropdown Position */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-2 block">Dropdown Position</label>
+              <RadioGroup
+                value={config.dropdown_position || 'inside'}
+                onValueChange={v => update('dropdown_position', v)}
+                className="flex gap-4"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="inside" id="pos-inside" />
+                  <Label htmlFor="pos-inside" className="text-xs cursor-pointer">Inside Embed</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="below" id="pos-below" />
+                  <Label htmlFor="pos-below" className="text-xs cursor-pointer">Below Embed</Label>
+                </div>
+              </RadioGroup>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                "Inside" = Dropdown ist Teil des Embed-Bereichs. "Below" = Dropdown erscheint als separates Element unter dem Embed.
+              </p>
+            </div>
           </div>
 
           {/* Ticket Types */}
@@ -332,7 +374,9 @@ export default function TicketPanelEditor() {
 
           {/* Welcome Message */}
           <div className="nox-surface rounded-xl border border-border/50 p-5 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Welcome Message (Ticket opened)</h3>
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary" /> Welcome Message (Ticket opened)
+            </h3>
             <p className="text-xs text-muted-foreground">Variables: {'{emoji}'}, {'{label}'}, {'{user}'}</p>
 
             <div>
@@ -382,6 +426,30 @@ export default function TicketPanelEditor() {
               </div>
             </div>
           </div>
+
+          {/* Ping DM Message */}
+          <div className="nox-surface rounded-xl border border-border/50 p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Bell className="w-4 h-4 text-primary" /> Ping DM Message (/ping)
+            </h3>
+            <p className="text-xs text-muted-foreground">Variables: {'{user}'}, {'{channel}'} — Message sent as DM when admin uses /ping in a ticket.</p>
+
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">DM Message (Markdown)</label>
+              <div className="relative">
+                <Textarea value={config.ping_dm_message || ''} onChange={e => update('ping_dm_message', e.target.value)}
+                  placeholder="Hey {user}! You have an open ticket..."
+                  className="bg-background/50 border-border/60 min-h-[120px] font-mono text-xs" />
+                <button onClick={() => setEmojiPickerFor(emojiPickerFor === 'ping_dm_message' ? null : 'ping_dm_message')}
+                  className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
+                  <Smile className="w-4 h-4" />
+                </button>
+                {emojiPickerFor === 'ping_dm_message' && (
+                  <EmojiPicker emojis={emojis} onSelect={t => insertEmojiAtField('ping_dm_message', t)} onClose={() => setEmojiPickerFor(null)} />
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Live Preview */}
@@ -395,39 +463,58 @@ export default function TicketPanelEditor() {
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${previewTab === 'welcome' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
               Welcome Preview
             </button>
+            <button onClick={() => setPreviewTab('ping')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${previewTab === 'ping' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+              Ping DM Preview
+            </button>
           </div>
 
           {/* Discord-style embed preview */}
           <div className="rounded-xl bg-[#313338] p-4 min-h-[300px]">
             {previewTab === 'panel' ? (
-              <div className="flex gap-3">
-                {/* Colored bar */}
-                <div className="w-1 rounded-full shrink-0" style={{ backgroundColor: config.embed_color }} />
-                <div className="flex-1 space-y-2">
-                  {/* Title */}
-                  <div className="font-semibold text-white text-sm" dangerouslySetInnerHTML={{ __html: renderEmbedText(config.embed_title, emojis) }} />
-                  {/* Description */}
-                  <div className="text-[#dbdee1] text-[13px] whitespace-pre-wrap leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: renderEmbedText(config.embed_description, emojis) }} />
-                  {/* Thumbnail */}
-                  {config.embed_thumbnail_url && (
-                    <img src={config.embed_thumbnail_url} alt="" className="w-16 h-16 rounded-lg absolute top-4 right-4" />
-                  )}
-                  {/* Image */}
-                  {config.embed_image_url && (
-                    <img src={config.embed_image_url} alt="" className="w-full max-w-xs rounded-lg mt-2" />
-                  )}
-                  {/* Footer */}
-                  {config.embed_footer_text && (
-                    <div className="text-[#a1a5ab] text-[11px] mt-3 pt-2 border-t border-[#3f4147]">{config.embed_footer_text}</div>
-                  )}
-                  {/* Fake dropdown */}
-                  <div className="mt-3 bg-[#1e1f22] rounded-md px-3 py-2 text-[#6d6f78] text-sm cursor-default">
-                    {config.dropdown_placeholder || 'Choose your ticket type'}
+              <div className="space-y-3">
+                {/* Message content above embed */}
+                {config.panel_content && (
+                  <div className="text-[#dbdee1] text-sm whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: renderEmbedText(config.panel_content, emojis) }} />
+                )}
+                <div className="flex gap-3">
+                  {/* Colored bar */}
+                  <div className="w-1 rounded-full shrink-0" style={{ backgroundColor: config.embed_color }} />
+                  <div className="flex-1 space-y-2 relative">
+                    {/* Title */}
+                    <div className="font-semibold text-white text-sm" dangerouslySetInnerHTML={{ __html: renderEmbedText(config.embed_title, emojis) }} />
+                    {/* Description */}
+                    <div className="text-[#dbdee1] text-[13px] whitespace-pre-wrap leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderEmbedText(config.embed_description, emojis) }} />
+                    {/* Thumbnail */}
+                    {config.embed_thumbnail_url && (
+                      <img src={config.embed_thumbnail_url} alt="" className="w-16 h-16 rounded-lg absolute top-0 right-0" />
+                    )}
+                    {/* Image */}
+                    {config.embed_image_url && (
+                      <img src={config.embed_image_url} alt="" className="w-full max-w-xs rounded-lg mt-2" />
+                    )}
+                    {/* Footer */}
+                    {config.embed_footer_text && (
+                      <div className="text-[#a1a5ab] text-[11px] mt-3 pt-2 border-t border-[#3f4147]">{config.embed_footer_text}</div>
+                    )}
+                    {/* Dropdown inside embed */}
+                    {(config.dropdown_position || 'inside') === 'inside' && (
+                      <div className="mt-3 bg-[#1e1f22] rounded-md px-3 py-2 text-[#6d6f78] text-sm cursor-default">
+                        {config.dropdown_placeholder || 'Choose your ticket type'}
+                      </div>
+                    )}
                   </div>
                 </div>
+                {/* Dropdown below embed */}
+                {config.dropdown_position === 'below' && (
+                  <div className="bg-[#1e1f22] rounded-md px-3 py-2 text-[#6d6f78] text-sm cursor-default">
+                    {config.dropdown_placeholder || 'Choose your ticket type'}
+                  </div>
+                )}
               </div>
-            ) : (
+            ) : previewTab === 'welcome' ? (
               <div className="flex gap-3">
                 <div className="w-1 rounded-full shrink-0" style={{ backgroundColor: config.welcome_color || '#7c3aed' }} />
                 <div className="flex-1 space-y-2">
@@ -453,6 +540,17 @@ export default function TicketPanelEditor() {
                     </div>
                   </div>
                 </div>
+              </div>
+            ) : (
+              /* Ping DM Preview */
+              <div className="space-y-2">
+                <div className="text-[10px] text-[#a1a5ab] uppercase tracking-wider mb-2">Direct Message Preview</div>
+                <div className="text-[#dbdee1] text-[13px] whitespace-pre-wrap leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: renderEmbedText(
+                    (config.ping_dm_message || 'Hey {user}! You have an open ticket.')
+                      .replace(/\{user\}/g, '@ExampleUser')
+                      .replace(/\{channel\}/g, '#ticket-example-abc'), emojis
+                  ) }} />
               </div>
             )}
           </div>

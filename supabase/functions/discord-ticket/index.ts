@@ -58,13 +58,11 @@ async function getPanelConfig() {
   return null
 }
 
-// Parse custom emoji string like <:name:id> or <a:name:id> into Discord emoji object
 function parseEmojiForDropdown(emojiStr: string): { name: string; id?: string; animated?: boolean } | null {
   const customMatch = emojiStr.match(/^<(a?):(\w+):(\d+)>$/)
   if (customMatch) {
     return { name: customMatch[2], id: customMatch[3], animated: customMatch[1] === 'a' }
   }
-  // Standard unicode emoji
   return { name: emojiStr }
 }
 
@@ -75,7 +73,6 @@ async function createTicket(botToken: string, guildId: string, selectedValue: st
   const typeLabel = ticketType?.label || selectedValue
   const typeEmoji = ticketType?.emoji || '🎫'
 
-  // Find matching category
   let parentId: string | null = null
   try {
     const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
@@ -111,7 +108,6 @@ async function createTicket(botToken: string, guildId: string, selectedValue: st
 
   const ticketChannel = await createRes.json()
 
-  // Build welcome embed from config
   const welcomeTitle = (config?.welcome_title || '{emoji} {label}')
     .replace(/\{emoji\}/g, typeEmoji)
     .replace(/\{label\}/g, typeLabel)
@@ -155,6 +151,57 @@ async function createTicket(botToken: string, guildId: string, selectedValue: st
   }
 }
 
+async function handlePing(botToken: string, interaction: any) {
+  const config = await getPanelConfig()
+  const channelId = interaction.channel_id
+  const channelName = interaction.channel?.name || 'ticket'
+
+  // Get channel to find the ticket owner from permission overwrites
+  let ticketOwnerId: string | null = null
+  try {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+      headers: { Authorization: `Bot ${botToken}` },
+    })
+    const channel = await res.json()
+    // Find user permission overwrite (type 1) that isn't the bot
+    const userOverwrite = channel.permission_overwrites?.find((o: any) => o.type === 1)
+    if (userOverwrite) ticketOwnerId = userOverwrite.id
+  } catch (e) {
+    console.error('Failed to get channel:', e)
+  }
+
+  if (!ticketOwnerId) {
+    return Response.json({ type: 4, data: { content: '❌ Could not find the ticket owner.', flags: 64 } })
+  }
+
+  // Build DM message from config
+  const dmTemplate = config?.ping_dm_message || 'Hey {user}! 👋\n\nYou have an open ticket that needs your attention.\n\nPlease check your ticket and respond as soon as possible!'
+  const dmContent = dmTemplate
+    .replace(/\{user\}/g, `<@${ticketOwnerId}>`)
+    .replace(/\{channel\}/g, `<#${channelId}>`)
+
+  // Create DM channel then send message
+  try {
+    const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+      method: 'POST',
+      headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipient_id: ticketOwnerId }),
+    })
+    const dmChannel = await dmRes.json()
+
+    await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: dmContent }),
+    })
+
+    return Response.json({ type: 4, data: { content: `✅ Ping sent to <@${ticketOwnerId}> via DM.`, flags: 64 } })
+  } catch (e) {
+    console.error('Failed to send DM:', e)
+    return Response.json({ type: 4, data: { content: '❌ Failed to send DM. The user may have DMs disabled.', flags: 64 } })
+  }
+}
+
 Deno.serve(async (req) => {
   const publicKey = Deno.env.get('DISCORD_TICKET_PUBLIC_KEY')!
   const botToken = Deno.env.get('DISCORD_TICKET_BOT_TOKEN')!
@@ -178,7 +225,6 @@ Deno.serve(async (req) => {
     }
 
     if (commandName === 'panel') {
-      // Fetch config from database
       const config = await getPanelConfig()
       const ticketTypes = config?.ticket_types || DEFAULT_TICKET_TYPES
       const embedColor = hexColorToInt(config?.embed_color || '#7c3aed')
@@ -199,21 +245,31 @@ Deno.serve(async (req) => {
         return opt
       })
 
-      return Response.json({
-        type: 4,
-        data: {
-          embeds: [embed],
-          components: [{
-            type: 1,
-            components: [{
-              type: 3,
-              custom_id: 'ticket_open',
-              placeholder: config?.dropdown_placeholder || 'Choose your ticket type',
-              options: dropdownOptions,
-            }],
-          }],
-        },
-      })
+      const dropdownComponent = {
+        type: 1,
+        components: [{
+          type: 3,
+          custom_id: 'ticket_open',
+          placeholder: config?.dropdown_placeholder || 'Choose your ticket type',
+          options: dropdownOptions,
+        }],
+      }
+
+      const responseData: any = {
+        embeds: [embed],
+        components: [dropdownComponent],
+      }
+
+      // Add message content above embed if configured
+      if (config?.panel_content) {
+        responseData.content = config.panel_content
+      }
+
+      return Response.json({ type: 4, data: responseData })
+    }
+
+    if (commandName === 'ping') {
+      return await handlePing(botToken, interaction)
     }
 
     if (commandName === 'setup') {
