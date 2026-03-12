@@ -13,12 +13,13 @@ import {
 import {
   Package, Plus, Trash2, Copy, ChevronLeft, Settings, Users, KeyRound, LogOut,
   BarChart3, Send, Loader2, RefreshCw, CheckCircle2, XCircle, Eye, ArrowRight,
-  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X,
+  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X, MessageSquare,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
 import TicketPanelEditor from '@/components/TicketPanelEditor';
 import BotEmbedEditor from '@/components/BotEmbedEditor';
+import EmbedBuilder from '@/components/EmbedBuilder';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
@@ -87,7 +88,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -128,6 +129,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'traffic', label: 'Traffic', icon: Activity },
     { id: 'tickets', label: 'Tickets', icon: Shield },
     { id: 'emojis', label: 'Emojis', icon: ImageIcon },
+    { id: 'embeds', label: 'Embed Builder', icon: MessageSquare },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
@@ -305,6 +307,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === 'emojis' && (
               <motion.div key="emojis" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                 <EmojiUploadView />
+              </motion.div>
+            )}
+
+            {tab === 'embeds' && (
+              <motion.div key="embeds" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <EmbedBuilder />
               </motion.div>
             )}
 
