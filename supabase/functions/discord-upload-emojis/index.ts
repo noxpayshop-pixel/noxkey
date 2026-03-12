@@ -1,35 +1,33 @@
-import { JSZip } from 'https://esm.sh/jszip@3.10.1'
+import JSZip from 'https://esm.sh/jszip@3.10.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 8192;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    for (let j = 0; j < chunk.length; j++) {
+      binary += String.fromCharCode(chunk[j]);
+    }
+  }
+  return btoa(binary);
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders })
   }
 
   const botToken = Deno.env.get('DISCORD_BOT_TOKEN')!
   const guildId = Deno.env.get('DISCORD_GUILD_ID')!
 
   try {
-    const contentType = req.headers.get('content-type') || ''
-    let zipData: ArrayBuffer
-
-    if (contentType.includes('multipart/form-data')) {
-      const formData = await req.formData()
-      const file = formData.get('file') as File
-      if (!file) {
-        return new Response(JSON.stringify({ error: 'No file provided' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-      zipData = await file.arrayBuffer()
-    } else {
-      zipData = await req.arrayBuffer()
-    }
+    const zipData = await req.arrayBuffer()
 
     const zip = new JSZip()
     await zip.loadAsync(zipData)
@@ -37,29 +35,28 @@ Deno.serve(async (req) => {
     const results: Array<{ name: string; status: string; error?: string }> = []
     const supportedExtensions = ['.png', '.jpg', '.jpeg', '.gif']
 
-    for (const [filename, fileEntry] of Object.entries(zip.files)) {
-      const entry = fileEntry as any
-      if (entry.dir) continue
-
+    const entries = Object.entries(zip.files).filter(([filename, entry]: [string, any]) => {
+      if (entry.dir) return false
       const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'))
-      if (!supportedExtensions.includes(ext)) {
-        results.push({ name: filename, status: 'skipped', error: 'Unsupported format' })
-        continue
-      }
+      return supportedExtensions.includes(ext)
+    })
 
-      // Get emoji name from filename (without extension, without path)
+    for (const [filename, fileEntry] of entries) {
+      const entry = fileEntry as any
+      const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'))
+
       const baseName = filename.split('/').pop()!.replace(/\.[^.]+$/, '')
-      // Discord emoji names: 2-32 chars, alphanumeric + underscores only
       const emojiName = baseName.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 32)
       if (emojiName.length < 2) {
-        results.push({ name: filename, status: 'skipped', error: 'Name too short after sanitizing' })
+        results.push({ name: filename, status: 'skipped', error: 'Name too short' })
         continue
       }
 
       try {
-        const imageData = await entry.async('base64')
+        const arrayBuf = await entry.async('arraybuffer')
+        const base64 = arrayBufferToBase64(arrayBuf)
         const mimeType = ext === '.png' ? 'image/png' : ext === '.gif' ? 'image/gif' : 'image/jpeg'
-        const dataUri = `data:${mimeType};base64,${imageData}`
+        const dataUri = `data:${mimeType};base64,${base64}`
 
         const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
           method: 'POST',
@@ -71,14 +68,13 @@ Deno.serve(async (req) => {
         })
 
         if (res.ok) {
-          const emoji = await res.json()
-          results.push({ name: emojiName, status: 'uploaded', error: undefined })
+          results.push({ name: emojiName, status: 'uploaded' })
         } else {
           const err = await res.json()
           results.push({ name: emojiName, status: 'failed', error: err.message || JSON.stringify(err) })
         }
 
-        // Rate limit: Discord allows ~50 req/s but emoji creation is stricter
+        // Rate limit delay
         await new Promise((r) => setTimeout(r, 1500))
       } catch (err) {
         results.push({ name: emojiName, status: 'failed', error: String(err) })
