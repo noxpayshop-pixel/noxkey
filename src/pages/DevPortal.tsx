@@ -1598,8 +1598,32 @@ function CasinoAdminView() {
 function EmojiUploadView() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadingEmojis, setLoadingEmojis] = useState(false);
+  const [emojiList, setEmojiList] = useState<Array<{ id: string; name: string; animated: boolean; url: string }> | null>(null);
   const [results, setResults] = useState<Array<{ name: string; status: string; error?: string }> | null>(null);
   const [summary, setSummary] = useState<{ uploaded?: number; failed?: number; skipped?: number; deleted?: number } | null>(null);
+
+  const loadEmojis = async () => {
+    setLoadingEmojis(true);
+    try {
+      const response = await supabase.functions.invoke('discord-upload-emojis', {
+        body: { action: 'list' },
+      });
+      if (response.error) {
+        toast.error('Emojis laden fehlgeschlagen: ' + response.error.message);
+      } else {
+        setEmojiList(response.data.emojis);
+      }
+    } catch (err) {
+      toast.error('Fehler: ' + String(err));
+    } finally {
+      setLoadingEmojis(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEmojis();
+  }, []);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
