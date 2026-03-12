@@ -1,12 +1,11 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import nacl from 'https://esm.sh/tweetnacl@1.0.3'
 
 const TICKET_TYPES = [
-  { label: '🛒 Purchase Issue', value: 'purchase', emoji: '🛒', description: 'Problems with a purchase or order' },
-  { label: '🔄 Replacement', value: 'replacement', emoji: '🔄', description: 'Request a replacement for your product' },
-  { label: '❓ General Support', value: 'support', emoji: '❓', description: 'General questions or help' },
-  { label: '🐛 Bug Report', value: 'bug', emoji: '🐛', description: 'Report a bug or technical issue' },
-  { label: '💬 Other', value: 'other', emoji: '💬', description: 'Anything else' },
+  { label: 'Purchase Issue', value: 'purchase', emoji_name: 'purchase', description: 'Problems with a purchase or order' },
+  { label: 'Replacement', value: 'replacement', emoji_name: 'replacement', description: 'Request a replacement for your product' },
+  { label: 'General Support', value: 'support', emoji_name: 'support', description: 'General questions or help' },
+  { label: 'Bug Report', value: 'bug', emoji_name: 'bug', description: 'Report a bug or technical issue' },
+  { label: 'Other', value: 'other', emoji_name: 'other', description: 'Anything else' },
 ]
 
 const REQUIRED_ROLE_ID = '1481337204767981841'
@@ -39,6 +38,36 @@ function hasRole(member: any): boolean {
   return member?.roles?.includes(REQUIRED_ROLE_ID) ?? false
 }
 
+// Fetch custom emojis from the guild and build a lookup map
+async function getGuildEmojis(botToken: string, guildId: string): Promise<Record<string, string>> {
+  try {
+    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/emojis`, {
+      headers: { Authorization: `Bot ${botToken}` },
+    })
+    if (!res.ok) return {}
+    const emojis = await res.json()
+    const map: Record<string, string> = {}
+    for (const e of emojis) {
+      map[e.name.toLowerCase()] = `<:${e.name}:${e.id}>`
+    }
+    return map
+  } catch {
+    return {}
+  }
+}
+
+// Get a custom emoji string or fallback to default
+function getEmoji(emojiMap: Record<string, string>, name: string, fallback: string): string {
+  // Try exact match, then common variations
+  const lower = name.toLowerCase()
+  if (emojiMap[lower]) return emojiMap[lower]
+  // Try with nox_ prefix
+  if (emojiMap[`nox_${lower}`]) return emojiMap[`nox_${lower}`]
+  // Try ticket_ prefix
+  if (emojiMap[`ticket_${lower}`]) return emojiMap[`ticket_${lower}`]
+  return fallback
+}
+
 Deno.serve(async (req) => {
   const publicKey = Deno.env.get('DISCORD_TICKET_PUBLIC_KEY')!
   const botToken = Deno.env.get('DISCORD_TICKET_BOT_TOKEN')!
@@ -54,6 +83,29 @@ Deno.serve(async (req) => {
   // PING
   if (interaction.type === 1) {
     return Response.json({ type: 1 })
+  }
+
+  // Fetch guild emojis for custom emoji usage
+  const emojiMap = await getGuildEmojis(botToken, guildId)
+  
+  // Get branded emojis with fallbacks
+  const ticketEmoji = getEmoji(emojiMap, 'ticket', '🎫')
+  const purchaseEmoji = getEmoji(emojiMap, 'purchase', '🛒')
+  const replacementEmoji = getEmoji(emojiMap, 'replacement', '🔄')
+  const supportEmoji = getEmoji(emojiMap, 'support', '❓')
+  const bugEmoji = getEmoji(emojiMap, 'bug', '🐛')
+  const otherEmoji = getEmoji(emojiMap, 'other', '💬')
+  const starEmoji = getEmoji(emojiMap, 'star', '✦')
+  const arrowEmoji = getEmoji(emojiMap, 'arrow', '➜')
+  const lockEmoji = getEmoji(emojiMap, 'lock', '🔒')
+  const noxEmoji = getEmoji(emojiMap, 'nox', '💜')
+
+  const emojiForType: Record<string, string> = {
+    purchase: purchaseEmoji,
+    replacement: replacementEmoji,
+    support: supportEmoji,
+    bug: bugEmoji,
+    other: otherEmoji,
   }
 
   // APPLICATION_COMMAND (slash commands)
@@ -77,22 +129,23 @@ Deno.serve(async (req) => {
         data: {
           embeds: [
             {
-              title: '🎫 The Nox — Support Tickets',
+              title: `${ticketEmoji}  Support Panel`,
               description: [
-                'Need help? Open a ticket by selecting a category below.',
+                `Open a support ticket with **The Nox**.`,
                 '',
-                '**Available categories:**',
-                '🛒 **Purchase Issue** — Problems with orders',
-                '🔄 **Replacement** — Product replacements',
-                '❓ **General Support** — Questions & help',
-                '🐛 **Bug Report** — Technical issues',
-                '💬 **Other** — Anything else',
+                `**Professional support** tailored to your needs`,
+                `**Fast responses** — no long wait times`,
+                `**Secure & private** ticket channels`,
                 '',
-                '> *Please select a category from the dropdown to open a ticket.*',
+                `## ${starEmoji} Start your ticket`,
+                '',
+                `Select the category from the menu below to create your ticket.`,
               ].join('\n'),
               color: 0x7c3aed,
-              footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
-              timestamp: new Date().toISOString(),
+              thumbnail: {
+                url: 'https://cdn.discordapp.com/icons/' + guildId + '/a_placeholder.png',
+              },
+              footer: { text: '© The Nox • Ticket System' },
             },
           ],
           components: [
@@ -102,11 +155,12 @@ Deno.serve(async (req) => {
                 {
                   type: 3,
                   custom_id: 'ticket_open',
-                  placeholder: '📩 Select a category to open a ticket...',
+                  placeholder: 'Choose your ticket type',
                   options: TICKET_TYPES.map((t) => ({
                     label: t.label,
                     value: t.value,
                     description: t.description,
+                    emoji: { name: t.value === 'purchase' ? '🛒' : t.value === 'replacement' ? '🔄' : t.value === 'support' ? '❓' : t.value === 'bug' ? '🐛' : '💬' },
                   })),
                 },
               ],
@@ -117,18 +171,18 @@ Deno.serve(async (req) => {
     }
 
     if (commandName === 'setup') {
-      // Create categories for tickets
       const categoryNames = [
-        '🎫 Tickets — Purchase',
-        '🎫 Tickets — Replacement',
-        '🎫 Tickets — Support',
-        '🎫 Tickets — Bug Reports',
-        '🎫 Tickets — Other',
+        { name: '🎫 Tickets — Purchase', slug: 'purchase' },
+        { name: '🎫 Tickets — Replacement', slug: 'replacement' },
+        { name: '🎫 Tickets — Support', slug: 'support' },
+        { name: '🎫 Tickets — Bug Reports', slug: 'bug' },
+        { name: '🎫 Tickets — Other', slug: 'other' },
       ]
 
       const createdCategories: string[] = []
+      const errors: string[] = []
 
-      for (const name of categoryNames) {
+      for (const cat of categoryNames) {
         try {
           const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
             method: 'POST',
@@ -137,24 +191,33 @@ Deno.serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              name,
-              type: 4, // GUILD_CATEGORY
+              name: cat.name,
+              type: 4,
               permission_overwrites: [
                 {
-                  id: guildId, // @everyone
+                  id: guildId,
                   type: 0,
-                  deny: '1024', // VIEW_CHANNEL
+                  deny: '1024',
                 },
               ],
             }),
           })
 
           if (res.ok) {
-            const cat = await res.json()
-            createdCategories.push(cat.name)
+            const created = await res.json()
+            createdCategories.push(created.name)
+          } else {
+            const errText = await res.text()
+            errors.push(`${cat.name}: ${errText}`)
           }
-        } catch {}
+        } catch (e) {
+          errors.push(`${cat.name}: ${String(e)}`)
+        }
       }
+
+      const desc = createdCategories.length > 0
+        ? `Created ${createdCategories.length} ticket categories:\n${createdCategories.map((c) => `• ${c}`).join('\n')}`
+        : 'No categories were created.'
 
       return Response.json({
         type: 4,
@@ -162,7 +225,7 @@ Deno.serve(async (req) => {
           embeds: [
             {
               title: '✅ Setup Complete',
-              description: `Created ${createdCategories.length} ticket categories:\n${createdCategories.map((c) => `• ${c}`).join('\n')}`,
+              description: desc + (errors.length > 0 ? `\n\n**Errors:**\n${errors.join('\n')}` : ''),
               color: 0x22c55e,
               footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
             },
@@ -173,7 +236,7 @@ Deno.serve(async (req) => {
     }
   }
 
-  // MESSAGE_COMPONENT (dropdown select)
+  // MESSAGE_COMPONENT (dropdown select / buttons)
   if (interaction.type === 3) {
     const customId = interaction.data.custom_id
 
@@ -181,17 +244,17 @@ Deno.serve(async (req) => {
       const selectedValue = interaction.data.values[0]
       const userId = interaction.member.user.id
       const username = interaction.member.user.username
-
+      const typeEmoji = emojiForType[selectedValue] || '🎫'
       const ticketType = TICKET_TYPES.find((t) => t.value === selectedValue)
       const typeLabel = ticketType?.label || selectedValue
 
-      // Map ticket type to category name prefix for lookup
+      // Map ticket type to category name for lookup
       const categoryMap: Record<string, string> = {
-        purchase: 'tickets-—-purchase',
-        replacement: 'tickets-—-replacement',
-        support: 'tickets-—-support',
-        bug: 'tickets-—-bug-reports',
-        other: 'tickets-—-other',
+        purchase: 'purchase',
+        replacement: 'replacement',
+        support: 'support',
+        bug: 'bug',
+        other: 'other',
       }
 
       // Find the matching category
@@ -203,27 +266,29 @@ Deno.serve(async (req) => {
         const channels = await channelsRes.json()
         const categorySlug = categoryMap[selectedValue] || ''
         const category = channels.find(
-          (c: any) => c.type === 4 && c.name.toLowerCase().includes(categorySlug)
+          (c: any) => c.type === 4 && c.name.toLowerCase().includes('ticket') && c.name.toLowerCase().includes(categorySlug)
         )
         if (category) parentId = category.id
-      } catch {}
+      } catch (e) {
+        console.error('Failed to fetch channels:', e)
+      }
 
       // Create ticket channel
       const ticketChannelName = `ticket-${username}-${Date.now().toString(36)}`
 
       const channelPayload: any = {
         name: ticketChannelName,
-        type: 0, // GUILD_TEXT
+        type: 0,
         permission_overwrites: [
           {
-            id: guildId, // @everyone — deny view
+            id: guildId,
             type: 0,
             deny: '1024',
           },
           {
-            id: userId, // ticket creator — allow view + send
+            id: userId,
             type: 1,
-            allow: '3072', // VIEW_CHANNEL + SEND_MESSAGES
+            allow: '3072',
           },
         ],
       }
@@ -231,18 +296,6 @@ Deno.serve(async (req) => {
       if (parentId) {
         channelPayload.parent_id = parentId
       }
-
-      // Acknowledge immediately with deferred update
-      // We need to respond first, then do the channel creation
-      // Use type 6 (DEFERRED_UPDATE_MESSAGE) to acknowledge without changing the message
-      // Then use followup
-
-      // Actually for select menus we should acknowledge and then do work via followup
-      // Type 6 = DEFERRED_UPDATE_MESSAGE (doesn't change the original)
-      // But we want to send an ephemeral message to the user
-
-      // Let's use type 4 (CHANNEL_MESSAGE_WITH_SOURCE) with ephemeral flag
-      // But we need to create the channel first... let's do it inline since it's fast
 
       try {
         const createRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
@@ -256,10 +309,11 @@ Deno.serve(async (req) => {
 
         if (!createRes.ok) {
           const err = await createRes.text()
+          console.error('Channel creation failed:', err)
           return Response.json({
             type: 4,
             data: {
-              content: `❌ Could not create ticket channel. Error: ${err}`,
+              content: `❌ Could not create ticket channel.`,
               flags: 64,
             },
           })
@@ -267,7 +321,7 @@ Deno.serve(async (req) => {
 
         const ticketChannel = await createRes.json()
 
-        // Send welcome message in the ticket channel asking user to describe their issue
+        // Send welcome message in ticket channel
         await fetch(`https://discord.com/api/v10/channels/${ticketChannel.id}/messages`, {
           method: 'POST',
           headers: {
@@ -278,16 +332,17 @@ Deno.serve(async (req) => {
             content: `<@${userId}>`,
             embeds: [
               {
-                title: `🎫 ${typeLabel}`,
+                title: `${typeEmoji}  ${typeLabel}`,
                 description: [
                   `Hey <@${userId}>, welcome to your ticket!`,
                   '',
-                  '**Please describe your issue or question below:**',
-                  '• What product or service is this about?',
-                  '• What exactly happened or what do you need help with?',
-                  '• Include any relevant screenshots, order IDs, or details.',
+                  '## 📝 Please describe your issue',
                   '',
-                  '> *A team member will be with you shortly. Please be patient!*',
+                  '> • What product or service is this about?',
+                  '> • What exactly happened?',
+                  '> • Include any screenshots, order IDs, or details.',
+                  '',
+                  `-# A team member will be with you shortly. Please be patient!`,
                 ].join('\n'),
                 color: 0x7c3aed,
                 footer: { text: 'The Nox — We Care About YOU ✦ Premium Digital Delivery' },
@@ -300,9 +355,10 @@ Deno.serve(async (req) => {
                 components: [
                   {
                     type: 2,
-                    style: 4, // DANGER
-                    label: '🔒 Close Ticket',
+                    style: 4,
+                    label: 'Close Ticket',
                     custom_id: `ticket_close_${ticketChannel.id}`,
+                    emoji: { name: '🔒' },
                   },
                 ],
               },
@@ -318,10 +374,11 @@ Deno.serve(async (req) => {
           },
         })
       } catch (err) {
+        console.error('Ticket creation error:', err)
         return Response.json({
           type: 4,
           data: {
-            content: `❌ An error occurred while creating your ticket: ${String(err)}`,
+            content: `❌ An error occurred while creating your ticket.`,
             flags: 64,
           },
         })
@@ -332,7 +389,6 @@ Deno.serve(async (req) => {
     if (customId.startsWith('ticket_close_')) {
       const channelId = customId.replace('ticket_close_', '')
 
-      // Check if user has the required role
       if (!hasRole(interaction.member)) {
         return Response.json({
           type: 4,
@@ -343,7 +399,6 @@ Deno.serve(async (req) => {
         })
       }
 
-      // Delete the channel
       try {
         await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
           method: 'DELETE',
