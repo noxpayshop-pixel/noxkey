@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const sb = createClient(supabaseUrl, supabaseKey)
 
     const body = await req.json()
-    const { action, channel_id, embed, content, template_name, template_id } = body
+    const { action, channel_id, embed, content, template_name, template_id, buttons } = body
 
     // List text channels
     if (action === 'list_channels') {
