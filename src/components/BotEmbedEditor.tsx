@@ -34,6 +34,16 @@ const BOT_INFO: Record<string, { label: string; variables: string; previewVars: 
     variables: '{product}',
     previewVars: { '{product}': 'Netflix Premium' },
   },
+  join_welcome: {
+    label: 'Join Welcome DM',
+    variables: '{user}',
+    previewVars: { '{user}': 'CoolUser' },
+  },
+  join_reminder: {
+    label: 'Join Reminder DM (no role)',
+    variables: '{user}',
+    previewVars: { '{user}': 'CoolUser' },
+  },
 };
 
 function EmojiPicker({ emojis, onSelect, onClose }: { emojis: GuildEmoji[]; onSelect: (text: string) => void; onClose: () => void }) {
@@ -77,7 +87,7 @@ function renderEmbedText(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' }) {
+export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' | 'join_welcome' | 'join_reminder' }) {
   const [config, setConfig] = useState<EmbedConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

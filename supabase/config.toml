@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.discord-ticket-register]
 verify_jwt = false
+
+[functions.discord-join-welcome]
+verify_jwt = false
