@@ -15,6 +15,12 @@ interface EmbedField {
   inline: boolean;
 }
 
+interface LinkButton {
+  label: string;
+  url: string;
+  emoji: string;
+}
+
 interface EmbedData {
   title: string;
   description: string;
@@ -29,6 +35,7 @@ interface EmbedData {
   footer_text: string;
   footer_icon_url: string;
   fields: EmbedField[];
+  buttons: LinkButton[];
 }
 
 interface Channel {
