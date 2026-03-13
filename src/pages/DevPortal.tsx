@@ -318,6 +318,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
               </motion.div>
             )}
 
+            {tab === 'joindm' && (
+              <motion.div key="joindm" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <JoinDmEditor />
+              </motion.div>
+            )}
+
             {tab === 'settings' && (
               <motion.div key="settings" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-6 max-w-2xl">
                 <h2 className="text-lg font-semibold text-foreground mb-4">Settings</h2>
