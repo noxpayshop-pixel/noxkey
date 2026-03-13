@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw, Save, FolderOpen, Pin, PinOff, X } from 'lucide-react';
+import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw, Save, FolderOpen, Pin, PinOff, X, ExternalLink, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -13,6 +13,12 @@ interface EmbedField {
   name: string;
   value: string;
   inline: boolean;
+}
+
+interface LinkButton {
+  label: string;
+  url: string;
+  emoji: string;
 }
 
 interface EmbedData {
@@ -29,6 +35,7 @@ interface EmbedData {
   footer_text: string;
   footer_icon_url: string;
   fields: EmbedField[];
+  buttons: LinkButton[];
 }
 
 interface Channel {
@@ -80,6 +87,7 @@ const DEFAULT_EMBED: EmbedData = {
   footer_text: '',
   footer_icon_url: '',
   fields: [],
+  buttons: [],
 };
 
 function renderEmbedMarkdown(text: string): string {
@@ -211,7 +219,7 @@ export default function EmbedBuilder() {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [emojis, setEmojis] = useState<GuildEmoji[]>([]);
   const [emojiTarget, setEmojiTarget] = useState<string | null>(null);
-  const [showSections, setShowSections] = useState({ author: false, images: false, footer: false, fields: false });
+  const [showSections, setShowSections] = useState({ author: false, images: false, footer: false, fields: false, buttons: false });
 
   // Templates
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -273,6 +281,14 @@ export default function EmbedBuilder() {
   };
   const removeField = (i: number) => update('fields', embed.fields.filter((_, idx) => idx !== i));
 
+  const addButton = () => update('buttons', [...embed.buttons, { label: '', url: '', emoji: '' }]);
+  const updateButton = (i: number, b: LinkButton) => {
+    const buttons = [...embed.buttons];
+    buttons[i] = b;
+    update('buttons', buttons);
+  };
+  const removeButton = (i: number) => update('buttons', embed.buttons.filter((_, idx) => idx !== i));
+
   const insertEmoji = (target: string, emoji: string) => {
     if (target === 'description') update('description', embed.description + emoji);
     else if (target === 'title') update('title', embed.title + emoji);
@@ -291,6 +307,7 @@ export default function EmbedBuilder() {
           channel_id: selectedChannel,
           content: messageContent || undefined,
           embed: (embed.title || embed.description) ? embed : undefined,
+          buttons: embed.buttons.filter(b => b.label && b.url),
         },
       });
       if (res.data?.success) {
@@ -361,6 +378,7 @@ export default function EmbedBuilder() {
           channel_id: selectedChannel,
           content: messageContent || undefined,
           embed: (embed.title || embed.description) ? embed : undefined,
+          buttons: embed.buttons.filter(b => b.label && b.url),
         },
       });
       if (res.data?.success) {
@@ -660,6 +678,43 @@ export default function EmbedBuilder() {
             )}
           </AnimatePresence>
 
+          {/* Buttons (Link) section */}
+          <button onClick={() => toggleSection('buttons')}
+            className="w-full flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1">
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSections.buttons ? 'rotate-180' : ''}`} />
+            Link Buttons ({embed.buttons.length})
+          </button>
+          <AnimatePresence>
+            {showSections.buttons && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 overflow-hidden">
+                {embed.buttons.map((b, i) => (
+                  <div key={i} className="flex gap-2 items-start p-3 rounded-lg bg-background/30 border border-border/30">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Input value={b.emoji} onChange={e => updateButton(i, { ...b, emoji: e.target.value })}
+                          placeholder="Emoji (optional)" className="h-8 text-xs bg-background/50 border-border/40 w-28" />
+                        <Input value={b.label} onChange={e => updateButton(i, { ...b, label: e.target.value })}
+                          placeholder="Button label" className="h-8 text-xs bg-background/50 border-border/40 flex-1" />
+                      </div>
+                      <Input value={b.url} onChange={e => updateButton(i, { ...b, url: e.target.value })}
+                        placeholder="https://..." className="h-8 text-xs bg-background/50 border-border/40" />
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => removeButton(i)} className="text-destructive hover:text-destructive h-8 w-8 p-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                {embed.buttons.length < 5 && (
+                  <Button variant="ghost" size="sm" onClick={addButton} className="text-xs w-full border border-dashed border-border/40">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Link Button (max 5)
+                  </Button>
+                )}
+                <p className="text-[10px] text-muted-foreground">Link buttons redirect users to a URL. Max 5 per message.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Action buttons */}
           <div className="pt-3 border-t border-border/30 space-y-2">
             <Button variant="nox" onClick={send} disabled={sending} className="w-full">
@@ -741,6 +796,20 @@ export default function EmbedBuilder() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Button preview */}
+          {embed.buttons.filter(b => b.label && b.url).length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {embed.buttons.filter(b => b.label && b.url).map((b, i) => (
+                <a key={i} href={b.url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] bg-[#4e5058] hover:bg-[#6d6f78] text-white text-sm font-medium transition-colors cursor-pointer">
+                  {b.emoji && <span className="text-sm">{b.emoji}</span>}
+                  {b.label}
+                  <ExternalLink className="w-3 h-3 ml-0.5 opacity-60" />
+                </a>
+              ))}
             </div>
           )}
 

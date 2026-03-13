@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function buildDiscordPayload(content?: string, embed?: any) {
+function buildDiscordPayload(content?: string, embed?: any, buttons?: any[]) {
   const payload: any = {}
   if (content) payload.content = content
   if (embed) {
@@ -39,6 +39,19 @@ function buildDiscordPayload(content?: string, embed?: any) {
     }
     payload.embeds = [discordEmbed]
   }
+  // Link buttons (style 5 = Link)
+  if (buttons?.length) {
+    payload.components = [{
+      type: 1, // Action Row
+      components: buttons.slice(0, 5).map((b: any) => ({
+        type: 2, // Button
+        style: 5, // Link
+        label: b.label,
+        url: b.url,
+        ...(b.emoji ? { emoji: { name: b.emoji } } : {}),
+      })),
+    }]
+  }
   return payload
 }
 
@@ -55,7 +68,7 @@ Deno.serve(async (req) => {
     const sb = createClient(supabaseUrl, supabaseKey)
 
     const body = await req.json()
-    const { action, channel_id, embed, content, template_name, template_id } = body
+    const { action, channel_id, embed, content, template_name, template_id, buttons } = body
 
     // List text channels
     if (action === 'list_channels') {
@@ -88,7 +101,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      const payload = buildDiscordPayload(content, embed)
+      const payload = buildDiscordPayload(content, embed, buttons)
       const res = await fetch(`https://discord.com/api/v10/channels/${channel_id}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
@@ -139,7 +152,7 @@ Deno.serve(async (req) => {
       if (!channel_id) return new Response(JSON.stringify({ error: 'No channel selected' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
       // Send the message first
-      const payload = buildDiscordPayload(content, embed)
+      const payload = buildDiscordPayload(content, embed, buttons)
       const res = await fetch(`https://discord.com/api/v10/channels/${channel_id}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
