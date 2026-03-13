@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw, Save, FolderOpen, Pin, PinOff, X } from 'lucide-react';
+import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw, Save, FolderOpen, Pin, PinOff, X, ExternalLink, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
