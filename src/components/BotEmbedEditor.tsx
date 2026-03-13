@@ -97,7 +97,7 @@ function renderEmbedText(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' | 'join_welcome' | 'join_reminder' }) {
+export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' | 'join_welcome' | 'join_reminder' | 'giveaway' | 'giveaway_winner' }) {
   const [config, setConfig] = useState<EmbedConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
