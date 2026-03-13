@@ -44,6 +44,16 @@ const BOT_INFO: Record<string, { label: string; variables: string; previewVars: 
     variables: '{user}',
     previewVars: { '{user}': 'CoolUser' },
   },
+  giveaway: {
+    label: 'Giveaway Embed',
+    variables: '{prize}, {ends_at}, {winner_count}',
+    previewVars: { '{prize}': 'Netflix Premium', '{ends_at}': 'in 1 hour', '{winner_count}': '1' },
+  },
+  giveaway_winner: {
+    label: 'Giveaway Winner DM',
+    variables: '{prize}, {user}',
+    previewVars: { '{prize}': 'Netflix Premium', '{user}': 'CoolUser' },
+  },
 };
 
 function EmojiPicker({ emojis, onSelect, onClose }: { emojis: GuildEmoji[]; onSelect: (text: string) => void; onClose: () => void }) {
