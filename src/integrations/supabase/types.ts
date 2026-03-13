@@ -170,6 +170,57 @@ export type Database = {
         }
         Relationships: []
       }
+      giveaways: {
+        Row: {
+          channel_id: string
+          created_at: string
+          description: string | null
+          ended: boolean
+          ends_at: string
+          entries: string[]
+          id: string
+          message_id: string | null
+          prize: string
+          rigged_user_id: string | null
+          rigged_username: string | null
+          title: string
+          winner_count: number
+          winner_ids: string[]
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          description?: string | null
+          ended?: boolean
+          ends_at: string
+          entries?: string[]
+          id?: string
+          message_id?: string | null
+          prize?: string
+          rigged_user_id?: string | null
+          rigged_username?: string | null
+          title?: string
+          winner_count?: number
+          winner_ids?: string[]
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          description?: string | null
+          ended?: boolean
+          ends_at?: string
+          entries?: string[]
+          id?: string
+          message_id?: string | null
+          prize?: string
+          rigged_user_id?: string | null
+          rigged_username?: string | null
+          title?: string
+          winner_count?: number
+          winner_ids?: string[]
+        }
+        Relationships: []
+      }
       ip_blacklist: {
         Row: {
           created_at: string
