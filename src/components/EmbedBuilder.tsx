@@ -281,6 +281,14 @@ export default function EmbedBuilder() {
   };
   const removeField = (i: number) => update('fields', embed.fields.filter((_, idx) => idx !== i));
 
+  const addButton = () => update('buttons', [...embed.buttons, { label: '', url: '', emoji: '' }]);
+  const updateButton = (i: number, b: LinkButton) => {
+    const buttons = [...embed.buttons];
+    buttons[i] = b;
+    update('buttons', buttons);
+  };
+  const removeButton = (i: number) => update('buttons', embed.buttons.filter((_, idx) => idx !== i));
+
   const insertEmoji = (target: string, emoji: string) => {
     if (target === 'description') update('description', embed.description + emoji);
     else if (target === 'title') update('title', embed.title + emoji);
