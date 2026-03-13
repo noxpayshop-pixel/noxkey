@@ -811,7 +811,7 @@ export default function EmbedBuilder() {
                 </a>
               ))}
             </div>
-          )
+          )}
 
           {!embed.title && !embed.description && !messageContent && (
             <p className="text-[#a1a5ab] text-xs text-center py-12">Start typing to see the preview...</p>
