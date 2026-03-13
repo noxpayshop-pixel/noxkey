@@ -21,6 +21,7 @@ import TicketPanelEditor from '@/components/TicketPanelEditor';
 import BotEmbedEditor from '@/components/BotEmbedEditor';
 import EmbedBuilder from '@/components/EmbedBuilder';
 import JoinDmEditor from '@/components/JoinDmEditor';
+import GiveawayEditor from '@/components/GiveawayEditor';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
