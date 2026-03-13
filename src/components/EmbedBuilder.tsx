@@ -799,6 +799,20 @@ export default function EmbedBuilder() {
             </div>
           )}
 
+          {/* Button preview */}
+          {embed.buttons.filter(b => b.label && b.url).length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {embed.buttons.filter(b => b.label && b.url).map((b, i) => (
+                <a key={i} href={b.url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-[3px] bg-[#4e5058] hover:bg-[#6d6f78] text-white text-sm font-medium transition-colors cursor-pointer">
+                  {b.emoji && <span className="text-sm">{b.emoji}</span>}
+                  {b.label}
+                  <ExternalLink className="w-3 h-3 ml-0.5 opacity-60" />
+                </a>
+              ))}
+            </div>
+          )
+
           {!embed.title && !embed.description && !messageContent && (
             <p className="text-[#a1a5ab] text-xs text-center py-12">Start typing to see the preview...</p>
           )}
