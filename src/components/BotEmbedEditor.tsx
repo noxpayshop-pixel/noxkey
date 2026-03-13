@@ -34,6 +34,16 @@ const BOT_INFO: Record<string, { label: string; variables: string; previewVars: 
     variables: '{product}',
     previewVars: { '{product}': 'Netflix Premium' },
   },
+  join_welcome: {
+    label: 'Join Welcome DM',
+    variables: '{user}',
+    previewVars: { '{user}': 'CoolUser' },
+  },
+  join_reminder: {
+    label: 'Join Reminder DM (no role)',
+    variables: '{user}',
+    previewVars: { '{user}': 'CoolUser' },
+  },
 };
 
 function EmojiPicker({ emojis, onSelect, onClose }: { emojis: GuildEmoji[]; onSelect: (text: string) => void; onClose: () => void }) {
