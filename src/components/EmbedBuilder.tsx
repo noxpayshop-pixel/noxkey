@@ -219,7 +219,7 @@ export default function EmbedBuilder() {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [emojis, setEmojis] = useState<GuildEmoji[]>([]);
   const [emojiTarget, setEmojiTarget] = useState<string | null>(null);
-  const [showSections, setShowSections] = useState({ author: false, images: false, footer: false, fields: false });
+  const [showSections, setShowSections] = useState({ author: false, images: false, footer: false, fields: false, buttons: false });
 
   // Templates
   const [templates, setTemplates] = useState<Template[]>([]);
