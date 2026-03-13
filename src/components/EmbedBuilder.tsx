@@ -378,6 +378,7 @@ export default function EmbedBuilder() {
           channel_id: selectedChannel,
           content: messageContent || undefined,
           embed: (embed.title || embed.description) ? embed : undefined,
+          buttons: embed.buttons.filter(b => b.label && b.url),
         },
       });
       if (res.data?.success) {
