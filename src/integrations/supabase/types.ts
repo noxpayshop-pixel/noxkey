@@ -224,6 +224,66 @@ export type Database = {
         }
         Relationships: []
       }
+      join_dm_config: {
+        Row: {
+          check_after_hours: number | null
+          id: string
+          is_enabled: boolean | null
+          required_role_id: string | null
+          required_role_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          check_after_hours?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          required_role_id?: string | null
+          required_role_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          check_after_hours?: number | null
+          id?: string
+          is_enabled?: boolean | null
+          required_role_id?: string | null
+          required_role_name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      member_joins: {
+        Row: {
+          discord_user_id: string
+          discord_username: string | null
+          has_role: boolean | null
+          id: string
+          joined_at: string | null
+          reminder_checked: boolean | null
+          reminder_sent: boolean | null
+          welcome_sent: boolean | null
+        }
+        Insert: {
+          discord_user_id: string
+          discord_username?: string | null
+          has_role?: boolean | null
+          id?: string
+          joined_at?: string | null
+          reminder_checked?: boolean | null
+          reminder_sent?: boolean | null
+          welcome_sent?: boolean | null
+        }
+        Update: {
+          discord_user_id?: string
+          discord_username?: string | null
+          has_role?: boolean | null
+          id?: string
+          joined_at?: string | null
+          reminder_checked?: boolean | null
+          reminder_sent?: boolean | null
+          welcome_sent?: boolean | null
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string
