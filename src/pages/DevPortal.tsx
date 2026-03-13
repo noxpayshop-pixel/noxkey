@@ -21,6 +21,7 @@ import TicketPanelEditor from '@/components/TicketPanelEditor';
 import BotEmbedEditor from '@/components/BotEmbedEditor';
 import EmbedBuilder from '@/components/EmbedBuilder';
 import JoinDmEditor from '@/components/JoinDmEditor';
+import GiveawayEditor from '@/components/GiveawayEditor';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
@@ -89,7 +90,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm' | 'giveaways'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -132,6 +133,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'emojis', label: 'Emojis', icon: ImageIcon },
     { id: 'embeds', label: 'Embed Builder', icon: MessageSquare },
     { id: 'joindm', label: 'Join DM', icon: Users },
+    { id: 'giveaways', label: 'Giveaways', icon: Gift },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
@@ -321,6 +323,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === 'joindm' && (
               <motion.div key="joindm" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                 <JoinDmEditor />
+              </motion.div>
+            )}
+
+            {tab === 'giveaways' && (
+              <motion.div key="giveaways" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <GiveawayEditor />
               </motion.div>
             )}
 

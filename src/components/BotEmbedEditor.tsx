@@ -44,6 +44,16 @@ const BOT_INFO: Record<string, { label: string; variables: string; previewVars: 
     variables: '{user}',
     previewVars: { '{user}': 'CoolUser' },
   },
+  giveaway: {
+    label: 'Giveaway Embed',
+    variables: '{prize}, {ends_at}, {winner_count}',
+    previewVars: { '{prize}': 'Netflix Premium', '{ends_at}': 'in 1 hour', '{winner_count}': '1' },
+  },
+  giveaway_winner: {
+    label: 'Giveaway Winner DM',
+    variables: '{prize}, {user}',
+    previewVars: { '{prize}': 'Netflix Premium', '{user}': 'CoolUser' },
+  },
 };
 
 function EmojiPicker({ emojis, onSelect, onClose }: { emojis: GuildEmoji[]; onSelect: (text: string) => void; onClose: () => void }) {
@@ -87,7 +97,7 @@ function renderEmbedText(text: string): string {
     .replace(/\n/g, '<br/>');
 }
 
-export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' | 'join_welcome' | 'join_reminder' }) {
+export default function BotEmbedEditor({ botType }: { botType: 'otp' | 'product' | 'join_welcome' | 'join_reminder' | 'giveaway' | 'giveaway_winner' }) {
   const [config, setConfig] = useState<EmbedConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
