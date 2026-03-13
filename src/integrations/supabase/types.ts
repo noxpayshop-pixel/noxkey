@@ -119,6 +119,30 @@ export type Database = {
         }
         Relationships: []
       }
+      embed_templates: {
+        Row: {
+          created_at: string | null
+          embed_data: Json
+          id: string
+          message_content: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          embed_data?: Json
+          id?: string
+          message_content?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          embed_data?: Json
+          id?: string
+          message_content?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
       gift_items: {
         Row: {
           created_at: string | null
@@ -427,6 +451,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sticky_messages: {
+        Row: {
+          channel_id: string
+          created_at: string | null
+          embed_data: Json
+          id: string
+          is_active: boolean | null
+          message_content: string | null
+          message_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string | null
+          embed_data?: Json
+          id?: string
+          is_active?: boolean | null
+          message_content?: string | null
+          message_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string | null
+          embed_data?: Json
+          id?: string
+          is_active?: boolean | null
+          message_content?: string | null
+          message_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       stock_items: {
         Row: {

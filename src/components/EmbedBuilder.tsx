@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw } from 'lucide-react';
+import { Loader2, Send, Plus, Trash2, Hash, ChevronDown, Smile, RefreshCw, Save, FolderOpen, Pin, PinOff, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface EmbedField {
   name: string;
@@ -48,6 +49,21 @@ interface GuildEmoji {
   id: string;
   name: string;
   animated: boolean;
+}
+
+interface Template {
+  id: string;
+  name: string;
+  message_content: string;
+  embed_data: EmbedData;
+  created_at: string;
+}
+
+interface StickyMessage {
+  id: string;
+  channel_id: string;
+  message_id: string;
+  is_active: boolean;
 }
 
 const DEFAULT_EMBED: EmbedData = {
@@ -197,6 +213,17 @@ export default function EmbedBuilder() {
   const [emojiTarget, setEmojiTarget] = useState<string | null>(null);
   const [showSections, setShowSections] = useState({ author: false, images: false, footer: false, fields: false });
 
+  // Templates
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [templateName, setTemplateName] = useState('');
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  // Sticky
+  const [stickyChannels, setStickyChannels] = useState<Record<string, StickyMessage>>({});
+  const [settingSticky, setSettingSticky] = useState(false);
+
   const fetchChannels = useCallback(async () => {
     setLoadingChannels(true);
     try {
@@ -216,7 +243,25 @@ export default function EmbedBuilder() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchChannels(); fetchEmojis(); }, [fetchChannels, fetchEmojis]);
+  const fetchTemplates = useCallback(async () => {
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', { body: { action: 'list_templates' } });
+      if (res.data?.templates) setTemplates(res.data.templates);
+    } catch {}
+  }, []);
+
+  const fetchStickies = useCallback(async () => {
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', { body: { action: 'sticky_list' } });
+      if (res.data?.stickies) {
+        const map: Record<string, StickyMessage> = {};
+        res.data.stickies.forEach((s: any) => { map[s.channel_id] = s; });
+        setStickyChannels(map);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchChannels(); fetchEmojis(); fetchTemplates(); fetchStickies(); }, [fetchChannels, fetchEmojis, fetchTemplates, fetchStickies]);
 
   const update = (key: keyof EmbedData, value: any) => setEmbed(prev => ({ ...prev, [key]: value }));
 
@@ -259,20 +304,194 @@ export default function EmbedBuilder() {
     setSending(false);
   };
 
+  // Template actions
+  const saveTemplate = async () => {
+    if (!templateName.trim()) return toast.error('Enter a template name');
+    setSavingTemplate(true);
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', {
+        body: {
+          action: 'save_template',
+          template_name: templateName.trim(),
+          content: messageContent || '',
+          embed,
+        },
+      });
+      if (res.data?.success) {
+        toast.success('Template saved!');
+        setSaveDialogOpen(false);
+        setTemplateName('');
+        fetchTemplates();
+      } else {
+        toast.error(res.data?.error || 'Failed to save');
+      }
+    } catch { toast.error('Failed to save template'); }
+    setSavingTemplate(false);
+  };
+
+  const loadTemplate = (t: Template) => {
+    const data = t.embed_data as any;
+    setEmbed({
+      ...DEFAULT_EMBED,
+      ...data,
+      fields: data.fields || [],
+    });
+    setMessageContent(t.message_content || '');
+    setShowTemplates(false);
+    toast.success(`Loaded "${t.name}"`);
+  };
+
+  const deleteTemplate = async (id: string) => {
+    try {
+      await supabase.functions.invoke('discord-send-embed', { body: { action: 'delete_template', template_id: id } });
+      toast.success('Template deleted');
+      fetchTemplates();
+    } catch { toast.error('Failed to delete'); }
+  };
+
+  // Sticky actions
+  const setSticky = async () => {
+    if (!selectedChannel) return toast.error('Select a channel first');
+    if (!embed.title && !embed.description && !messageContent) return toast.error('Add some content');
+    setSettingSticky(true);
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', {
+        body: {
+          action: 'sticky_set',
+          channel_id: selectedChannel,
+          content: messageContent || undefined,
+          embed: (embed.title || embed.description) ? embed : undefined,
+        },
+      });
+      if (res.data?.success) {
+        toast.success('Sticky message set!');
+        fetchStickies();
+      } else {
+        toast.error(res.data?.error || 'Failed');
+      }
+    } catch { toast.error('Failed to set sticky'); }
+    setSettingSticky(false);
+  };
+
+  const removeSticky = async (channelId: string) => {
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', { body: { action: 'sticky_remove', channel_id: channelId } });
+      if (res.data?.success) {
+        toast.success('Sticky removed');
+        fetchStickies();
+      }
+    } catch { toast.error('Failed to remove sticky'); }
+  };
+
+  const refreshSticky = async (channelId: string) => {
+    try {
+      const res = await supabase.functions.invoke('discord-send-embed', { body: { action: 'sticky_refresh', channel_id: channelId } });
+      if (res.data?.success) toast.success('Sticky refreshed!');
+      else toast.error(res.data?.error || 'Failed');
+    } catch { toast.error('Failed to refresh'); }
+  };
+
   const toggleSection = (key: keyof typeof showSections) => setShowSections(prev => ({ ...prev, [key]: !prev[key] }));
 
-  const colorInt = parseInt(embed.color.replace('#', ''), 16);
+  const isChannelSticky = selectedChannel ? !!stickyChannels[selectedChannel] : false;
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground">Embed Builder</h3>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowTemplates(!showTemplates)}>
+            <FolderOpen className="w-4 h-4 mr-1" /> Templates ({templates.length})
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSaveDialogOpen(true)}>
+            <Save className="w-4 h-4 mr-1" /> Save
+          </Button>
           <Button variant="ghost" size="sm" onClick={fetchChannels} disabled={loadingChannels}>
             <RefreshCw className={`w-4 h-4 mr-1 ${loadingChannels ? 'animate-spin' : ''}`} /> Channels
           </Button>
         </div>
       </div>
+
+      {/* Templates panel */}
+      <AnimatePresence>
+        {showTemplates && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden">
+            <div className="rounded-xl border border-border/40 bg-card/50 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saved Templates</p>
+                <Button variant="ghost" size="sm" onClick={() => setShowTemplates(false)} className="h-6 w-6 p-0">
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              {templates.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">No saved templates yet</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                {templates.map(t => (
+                  <div key={t.id} className="flex items-center gap-2 p-2.5 rounded-lg bg-background/50 border border-border/30 hover:border-primary/30 transition-colors group">
+                    <button onClick={() => loadTemplate(t)} className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{t.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString()}</p>
+                    </button>
+                    <Button variant="ghost" size="sm" onClick={() => deleteTemplate(t.id)}
+                      className="h-7 w-7 p-0 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sticky messages overview */}
+      {Object.keys(stickyChannels).length > 0 && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-2">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1.5">
+            <Pin className="w-3.5 h-3.5" /> Active Sticky Messages
+          </p>
+          <div className="space-y-1.5">
+            {Object.entries(stickyChannels).map(([chId, sticky]) => {
+              const ch = channels.find(c => c.id === chId);
+              return (
+                <div key={chId} className="flex items-center gap-2 text-xs">
+                  <Hash className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-foreground font-medium">{ch?.name || chId}</span>
+                  <div className="ml-auto flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => refreshSticky(chId)} className="h-6 px-2 text-[10px]">
+                      <RefreshCw className="w-3 h-3 mr-1" /> Refresh
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => removeSticky(chId)} className="h-6 px-2 text-[10px] text-destructive hover:text-destructive">
+                      <PinOff className="w-3 h-3 mr-1" /> Remove
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Save template dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save Template</DialogTitle>
+            <DialogDescription>Save the current embed as a reusable template.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="Template name..."
+              className="bg-background/50" autoFocus onKeyDown={e => e.key === 'Enter' && saveTemplate()} />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
+              <Button variant="nox" onClick={saveTemplate} disabled={savingTemplate}>
+                {savingTemplate ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
+                Save
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Editor */}
@@ -281,6 +500,9 @@ export default function EmbedBuilder() {
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">Channel</label>
             <ChannelSelector channels={channels} categories={categories} selected={selectedChannel} onSelect={setSelectedChannel} />
+            {isChannelSticky && (
+              <p className="text-[10px] text-primary mt-1 flex items-center gap-1"><Pin className="w-3 h-3" /> This channel has a sticky message</p>
+            )}
           </div>
 
           {/* Message content */}
@@ -438,11 +660,15 @@ export default function EmbedBuilder() {
             )}
           </AnimatePresence>
 
-          {/* Send button */}
-          <div className="pt-3 border-t border-border/30">
+          {/* Action buttons */}
+          <div className="pt-3 border-t border-border/30 space-y-2">
             <Button variant="nox" onClick={send} disabled={sending} className="w-full">
               {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
               Send to #{channels.find(c => c.id === selectedChannel)?.name || 'channel'}
+            </Button>
+            <Button variant="noxOutline" onClick={setSticky} disabled={settingSticky} className="w-full">
+              {settingSticky ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Pin className="w-4 h-4 mr-2" />}
+              {isChannelSticky ? 'Update Sticky' : 'Set as Sticky'} in #{channels.find(c => c.id === selectedChannel)?.name || 'channel'}
             </Button>
           </div>
         </div>
@@ -461,7 +687,7 @@ export default function EmbedBuilder() {
           {(embed.title || embed.description) && (
             <div className="flex gap-3">
               <div className="w-1 rounded-full shrink-0" style={{ backgroundColor: embed.color }} />
-              <div className="flex-1 space-y-2 min-w-0">
+              <div className="flex-1 space-y-2 min-w-0 relative">
                 {/* Author */}
                 {embed.author_name && (
                   <div className="flex items-center gap-1.5">
