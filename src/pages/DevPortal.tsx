@@ -90,7 +90,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm' | 'giveaways'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
