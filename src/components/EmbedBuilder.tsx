@@ -87,6 +87,7 @@ const DEFAULT_EMBED: EmbedData = {
   footer_text: '',
   footer_icon_url: '',
   fields: [],
+  buttons: [],
 };
 
 function renderEmbedMarkdown(text: string): string {
