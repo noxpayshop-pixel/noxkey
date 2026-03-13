@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
-      const payload = buildDiscordPayload(content, embed)
+      const payload = buildDiscordPayload(content, embed, buttons)
       const res = await fetch(`https://discord.com/api/v10/channels/${channel_id}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
