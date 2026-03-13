@@ -1,0 +1,1 @@
+ALTER TABLE public.member_joins ADD CONSTRAINT member_joins_discord_user_id_key UNIQUE (discord_user_id);
