@@ -131,6 +131,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'tickets', label: 'Tickets', icon: Shield },
     { id: 'emojis', label: 'Emojis', icon: ImageIcon },
     { id: 'embeds', label: 'Embed Builder', icon: MessageSquare },
+    { id: 'joindm', label: 'Join DM', icon: Users },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
