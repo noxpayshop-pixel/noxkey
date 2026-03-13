@@ -678,6 +678,43 @@ export default function EmbedBuilder() {
             )}
           </AnimatePresence>
 
+          {/* Buttons (Link) section */}
+          <button onClick={() => toggleSection('buttons')}
+            className="w-full flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1">
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSections.buttons ? 'rotate-180' : ''}`} />
+            Link Buttons ({embed.buttons.length})
+          </button>
+          <AnimatePresence>
+            {showSections.buttons && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                className="space-y-2 overflow-hidden">
+                {embed.buttons.map((b, i) => (
+                  <div key={i} className="flex gap-2 items-start p-3 rounded-lg bg-background/30 border border-border/30">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex gap-2">
+                        <Input value={b.emoji} onChange={e => updateButton(i, { ...b, emoji: e.target.value })}
+                          placeholder="Emoji (optional)" className="h-8 text-xs bg-background/50 border-border/40 w-28" />
+                        <Input value={b.label} onChange={e => updateButton(i, { ...b, label: e.target.value })}
+                          placeholder="Button label" className="h-8 text-xs bg-background/50 border-border/40 flex-1" />
+                      </div>
+                      <Input value={b.url} onChange={e => updateButton(i, { ...b, url: e.target.value })}
+                        placeholder="https://..." className="h-8 text-xs bg-background/50 border-border/40" />
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => removeButton(i)} className="text-destructive hover:text-destructive h-8 w-8 p-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                {embed.buttons.length < 5 && (
+                  <Button variant="ghost" size="sm" onClick={addButton} className="text-xs w-full border border-dashed border-border/40">
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add Link Button (max 5)
+                  </Button>
+                )}
+                <p className="text-[10px] text-muted-foreground">Link buttons redirect users to a URL. Max 5 per message.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Action buttons */}
           <div className="pt-3 border-t border-border/30 space-y-2">
             <Button variant="nox" onClick={send} disabled={sending} className="w-full">
