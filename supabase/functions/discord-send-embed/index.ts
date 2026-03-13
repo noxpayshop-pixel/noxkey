@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
       if (!channel_id) return new Response(JSON.stringify({ error: 'No channel selected' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
       // Send the message first
-      const payload = buildDiscordPayload(content, embed)
+      const payload = buildDiscordPayload(content, embed, buttons)
       const res = await fetch(`https://discord.com/api/v10/channels/${channel_id}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bot ${botToken}`, 'Content-Type': 'application/json' },
