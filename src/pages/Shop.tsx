@@ -78,7 +78,7 @@ const Shop = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load products');
       const items: SellAuthProduct[] = data.data ?? data.products ?? (Array.isArray(data) ? data : []);
-      setProducts(items);
+      setProducts(items.filter(p => p.visibility === 'public'));
     } catch (err: any) {
       setError(err.message || 'Failed to load products');
     } finally {
