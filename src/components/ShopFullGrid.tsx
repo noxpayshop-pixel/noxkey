@@ -205,27 +205,28 @@ const ShopFullGrid = () => {
               const imageUrl = getImageUrl(product);
               return (
                 <Card key={product.id} className="group bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[var(--nox-shadow-sm)] overflow-hidden flex flex-col">
-                  {imageUrl && (
-                    <div className="aspect-video w-full overflow-hidden bg-muted/30">
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted/30">
+                    {imageUrl ? (
                       <img src={imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-10 h-10 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    {/* Stock overlay badge */}
+                    <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md ${product.stock_count > 0 ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-destructive/20 text-destructive border border-destructive/30'}`}>
+                      {product.stock_count > 0 ? `${product.stock_count} in Stock` : 'Out of Stock'}
                     </div>
-                  )}
+                  </div>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-bold text-foreground line-clamp-2">{product.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="pb-3 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="border-primary/30 text-primary font-bold text-xs">
-                        {formatPrice(price, product.currency)}
-                      </Badge>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-foreground">{formatPrice(price, product.currency)}</span>
                       {slashPrice && slashPrice > price && (
                         <span className="text-xs text-muted-foreground line-through">{formatPrice(slashPrice, product.currency)}</span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                      <span>{product.stock_count} in stock</span>
-                      <span>·</span>
-                      <span>{product.products_sold} sold</span>
                     </div>
                   </CardContent>
                   <CardFooter>
