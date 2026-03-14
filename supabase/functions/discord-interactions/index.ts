@@ -16,7 +16,7 @@ const corsHeaders = {
 
 // Verify Discord signature using Web Crypto API
 async function verifyDiscordSignature(req: Request, body: string): Promise<boolean> {
-  const publicKey = Deno.env.get('DISCORD_PUBLIC_KEY')
+  const publicKey = Deno.env.get('DISCORD_GIVEAWAY_PUBLIC_KEY')
   if (!publicKey) return false
 
   const signature = req.headers.get('x-signature-ed25519')
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         // Then process in background
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        const botToken = Deno.env.get('DISCORD_BOT_TOKEN')!
+        const botToken = Deno.env.get('DISCORD_GIVEAWAY_BOT_TOKEN')!
         const sb = createClient(supabaseUrl, supabaseKey)
 
         // Find giveaway by message_id
