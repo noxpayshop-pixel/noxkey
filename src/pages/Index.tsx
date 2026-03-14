@@ -1,7 +1,7 @@
 import HeroSection from '@/components/HeroSection';
 import KeyRedeemPanel from '@/components/KeyRedeemPanel';
 import PromoSection from '@/components/PromoSection';
-import ShopPreview from '@/components/ShopPreview';
+import ShopFullGrid from '@/components/ShopFullGrid';
 import TrustSection from '@/components/TrustSection';
 
 import { Link } from 'react-router-dom';
