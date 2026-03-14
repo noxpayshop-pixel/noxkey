@@ -16,7 +16,7 @@ const corsHeaders = {
 
 // Verify Discord signature using Web Crypto API
 async function verifyDiscordSignature(req: Request, body: string): Promise<boolean> {
-  const publicKey = Deno.env.get('DISCORD_PUBLIC_KEY')
+  const publicKey = Deno.env.get('DISCORD_GIVEAWAY_PUBLIC_KEY')
   if (!publicKey) return false
 
   const signature = req.headers.get('x-signature-ed25519')
