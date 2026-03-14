@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.discord-giveaway]
 verify_jwt = false
+
+[functions.discord-gateway]
+verify_jwt = false
+
+[functions.discord-send-embed]
+verify_jwt = false
