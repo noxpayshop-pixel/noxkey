@@ -13,7 +13,7 @@ import {
 import {
   Package, Plus, Trash2, Copy, ChevronLeft, Settings, Users, KeyRound, LogOut,
   BarChart3, Send, Loader2, RefreshCw, CheckCircle2, XCircle, Eye, ArrowRight,
-  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X, MessageSquare,
+  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X, MessageSquare, Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
