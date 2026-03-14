@@ -44,6 +44,8 @@
     --nox-shadow: 0 0 50px -12px hsl(265 85% 65% / 0.3);
     --nox-shadow-sm: 0 0 24px -6px hsl(265 85% 65% / 0.18);
     --nox-shadow-lg: 0 0 70px -8px hsl(265 85% 65% / 0.45);
+    --nox-gold: 45 90% 60%;
+    --nox-gold-accent: 35 95% 50%;
 
     --sidebar-background: 260 22% 6%;
     --sidebar-foreground: 260 15% 80%;
