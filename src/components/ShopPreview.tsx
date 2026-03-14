@@ -34,7 +34,7 @@ const ShopPreview = () => {
         const data = await res.json();
         if (res.ok) {
           const items: SellAuthProduct[] = data.data ?? data.products ?? (Array.isArray(data) ? data : []);
-          setProducts(items.slice(0, 3));
+          setProducts(items.filter((p: any) => p.visibility === 'public').slice(0, 3));
         }
       } catch { /* silent */ }
       setLoading(false);
