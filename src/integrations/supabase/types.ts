@@ -143,6 +143,45 @@ export type Database = {
         }
         Relationships: []
       }
+      gateway_bot_config: {
+        Row: {
+          dmall_embed_color: string | null
+          dmall_embed_description: string | null
+          dmall_embed_footer_text: string | null
+          dmall_embed_image_url: string | null
+          dmall_embed_title: string | null
+          ghost_ping_channel_id: string | null
+          ghost_ping_enabled: boolean | null
+          ghost_ping_message: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          dmall_embed_color?: string | null
+          dmall_embed_description?: string | null
+          dmall_embed_footer_text?: string | null
+          dmall_embed_image_url?: string | null
+          dmall_embed_title?: string | null
+          ghost_ping_channel_id?: string | null
+          ghost_ping_enabled?: boolean | null
+          ghost_ping_message?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          dmall_embed_color?: string | null
+          dmall_embed_description?: string | null
+          dmall_embed_footer_text?: string | null
+          dmall_embed_image_url?: string | null
+          dmall_embed_title?: string | null
+          ghost_ping_channel_id?: string | null
+          ghost_ping_enabled?: boolean | null
+          ghost_ping_message?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       gift_items: {
         Row: {
           created_at: string | null
