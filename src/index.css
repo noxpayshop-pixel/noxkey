@@ -339,4 +339,48 @@
   .animate-scale-bounce {
     animation: scaleInBounce 0.5s ease-out forwards;
   }
+
+  /* Animated gradient border */
+  @keyframes borderRotate {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
+
+  .nox-animated-border {
+    position: relative;
+    background: hsl(var(--nox-surface));
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .nox-animated-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--angle, 0deg), hsl(var(--nox-glow) / 0.6), transparent 40%, transparent 60%, hsl(var(--nox-glow-accent) / 0.6));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    animation: borderRotate 4s linear infinite;
+  }
+
+  /* Subtle text glow */
+  .nox-text-glow {
+    text-shadow: 0 0 30px hsl(var(--nox-glow) / 0.4), 0 0 60px hsl(var(--nox-glow) / 0.15);
+  }
+
+  /* Mesh gradient background */
+  .nox-mesh {
+    background:
+      radial-gradient(ellipse at 20% 50%, hsl(var(--nox-glow) / 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(var(--nox-glow-accent) / 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, hsl(var(--nox-gold) / 0.03) 0%, transparent 50%);
+  }
+
+  /* Syne display font */
+  .font-display {
+    font-family: 'Syne', 'Space Grotesk', sans-serif;
+  }
 }
