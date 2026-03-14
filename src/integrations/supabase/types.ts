@@ -181,8 +181,8 @@ export type Database = {
           id: string
           message_id: string | null
           prize: string
-          rigged_user_id: string | null
-          rigged_username: string | null
+          rig_enabled: boolean
+          rigged_users: Json
           title: string
           winner_count: number
           winner_ids: string[]
@@ -197,8 +197,8 @@ export type Database = {
           id?: string
           message_id?: string | null
           prize?: string
-          rigged_user_id?: string | null
-          rigged_username?: string | null
+          rig_enabled?: boolean
+          rigged_users?: Json
           title?: string
           winner_count?: number
           winner_ids?: string[]
@@ -213,8 +213,8 @@ export type Database = {
           id?: string
           message_id?: string | null
           prize?: string
-          rigged_user_id?: string | null
-          rigged_username?: string | null
+          rig_enabled?: boolean
+          rigged_users?: Json
           title?: string
           winner_count?: number
           winner_ids?: string[]
