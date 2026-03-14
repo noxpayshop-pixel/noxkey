@@ -6,7 +6,7 @@ import TrustSection from '@/components/TrustSection';
 
 import { Link } from 'react-router-dom';
 import { Lock, Heart } from 'lucide-react';
-import logo from '@/assets/logo.gif';
+import logo from '@/assets/logo-new.jpg';
 import { useEffect, useRef } from 'react';
 
 const Index = () => {
