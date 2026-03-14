@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const botToken = Deno.env.get('DISCORD_BOT_TOKEN')!
+    const botToken = Deno.env.get('DISCORD_GIVEAWAY_BOT_TOKEN')!
     const guildId = Deno.env.get('DISCORD_GUILD_ID')!
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
