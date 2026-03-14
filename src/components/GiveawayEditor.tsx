@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, Plus, Trash2, Trophy, Gift, Users, Clock, Crown, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +20,11 @@ interface Category {
   name: string;
 }
 
+interface RiggedUser {
+  user_id: string;
+  username: string;
+}
+
 interface Giveaway {
   id: string;
   channel_id: string;
@@ -28,8 +34,8 @@ interface Giveaway {
   winner_count: number;
   ends_at: string;
   ended: boolean;
-  rigged_user_id: string | null;
-  rigged_username: string | null;
+  rig_enabled: boolean;
+  rigged_users: RiggedUser[];
   entries: string[];
   winner_ids: string[];
   created_at: string;
@@ -47,8 +53,8 @@ export default function GiveawayEditor() {
   const [prize, setPrize] = useState('');
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [winnerCount, setWinnerCount] = useState(1);
-  const [riggedUserId, setRiggedUserId] = useState('');
-  const [riggedUsername, setRiggedUsername] = useState('');
+  const [rigEnabled, setRigEnabled] = useState(false);
+  const [riggedUsers, setRiggedUsers] = useState<RiggedUser[]>([{ user_id: '', username: '' }]);
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -69,6 +75,18 @@ export default function GiveawayEditor() {
     Promise.all([fetchChannels(), fetchGiveaways()]).then(() => setLoading(false));
   }, [fetchChannels, fetchGiveaways]);
 
+  const addRiggedUser = () => {
+    setRiggedUsers(prev => [...prev, { user_id: '', username: '' }]);
+  };
+
+  const removeRiggedUser = (index: number) => {
+    setRiggedUsers(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateRiggedUser = (index: number, field: keyof RiggedUser, value: string) => {
+    setRiggedUsers(prev => prev.map((u, i) => i === index ? { ...u, [field]: value } : u));
+  };
+
   const createGiveaway = async () => {
     if (!channelId || !prize.trim()) {
       toast.error('Select a channel and enter a prize');
@@ -76,6 +94,10 @@ export default function GiveawayEditor() {
     }
     setCreating(true);
     try {
+      const validRiggedUsers = rigEnabled
+        ? riggedUsers.filter(u => u.user_id.trim())
+        : [];
+
       const res = await supabase.functions.invoke('discord-giveaway', {
         body: {
           action: 'create',
@@ -83,15 +105,15 @@ export default function GiveawayEditor() {
           prize: prize.trim(),
           duration_minutes: durationMinutes,
           winner_count: winnerCount,
-          rigged_user_id: riggedUserId.trim() || undefined,
-          rigged_username: riggedUsername.trim() || undefined,
+          rig_enabled: rigEnabled && validRiggedUsers.length > 0,
+          rigged_users: validRiggedUsers,
         },
       });
       if (res.data?.success) {
         toast.success('Giveaway created!');
         setPrize('');
-        setRiggedUserId('');
-        setRiggedUsername('');
+        setRigEnabled(false);
+        setRiggedUsers([{ user_id: '', username: '' }]);
         fetchGiveaways();
       } else {
         toast.error(res.data?.error || 'Failed to create');
@@ -214,32 +236,51 @@ export default function GiveawayEditor() {
 
         {/* Rig Section */}
         <div className="mt-5 p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-          <h4 className="text-xs font-semibold text-destructive flex items-center gap-1.5 mb-3">
-            <Crown className="w-3.5 h-3.5" /> Rig Winner (Optional)
-          </h4>
-          <p className="text-[11px] text-muted-foreground mb-3">
-            If set, this user will always win. Leave empty for a fair giveaway.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Discord User ID</label>
-              <Input
-                value={riggedUserId}
-                onChange={e => setRiggedUserId(e.target.value)}
-                placeholder="e.g. 123456789012345678"
-                className="bg-background/50 border-border/60 text-xs"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Username (for reference)</label>
-              <Input
-                value={riggedUsername}
-                onChange={e => setRiggedUsername(e.target.value)}
-                placeholder="e.g. CoolUser"
-                className="bg-background/50 border-border/60 text-xs"
-              />
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+              <Crown className="w-3.5 h-3.5" /> Rig Winner
+            </h4>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-muted-foreground">{rigEnabled ? 'Enabled' : 'Disabled'}</span>
+              <Switch checked={rigEnabled} onCheckedChange={setRigEnabled} />
             </div>
           </div>
+
+          {rigEnabled && (
+            <div className="space-y-3">
+              <p className="text-[11px] text-muted-foreground">
+                These users will always win. They don't need to enter the giveaway.
+              </p>
+              {riggedUsers.map((user, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <Input
+                      value={user.user_id}
+                      onChange={e => updateRiggedUser(index, 'user_id', e.target.value)}
+                      placeholder="Discord User ID"
+                      className="bg-background/50 border-border/60 text-xs"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      value={user.username}
+                      onChange={e => updateRiggedUser(index, 'username', e.target.value)}
+                      placeholder="Username (optional)"
+                      className="bg-background/50 border-border/60 text-xs"
+                    />
+                  </div>
+                  {riggedUsers.length > 1 && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeRiggedUser(index)}>
+                      <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button variant="ghost" size="sm" onClick={addRiggedUser} className="text-xs">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Add User
+              </Button>
+            </div>
+          )}
         </div>
 
         <Button variant="nox" className="mt-5" onClick={createGiveaway} disabled={creating}>
@@ -276,8 +317,10 @@ export default function GiveawayEditor() {
                     <span>👥 {g.entries?.length || 0} entries</span>
                     <span>🏆 {g.winner_count} winner{g.winner_count > 1 ? 's' : ''}</span>
                     <span>⏰ {new Date(g.ends_at).toLocaleString()}</span>
-                    {g.rigged_user_id && (
-                      <span className="text-destructive font-medium">🎯 Rigged: {g.rigged_username || g.rigged_user_id}</span>
+                    {g.rig_enabled && g.rigged_users?.length > 0 && (
+                      <span className="text-destructive font-medium">
+                        🎯 Rigged: {g.rigged_users.map(u => u.username || u.user_id).join(', ')}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -314,7 +357,7 @@ export default function GiveawayEditor() {
                     <span>{getChannelName(g.channel_id)}</span>
                     <span>👥 {g.entries?.length || 0} entries</span>
                     <span>🏆 {g.winner_ids?.length || 0} winner{(g.winner_ids?.length || 0) > 1 ? 's' : ''}</span>
-                    {g.rigged_user_id && (
+                    {g.rig_enabled && (
                       <span className="text-destructive/60 font-medium">🎯 Was rigged</span>
                     )}
                   </div>

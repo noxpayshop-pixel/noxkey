@@ -227,12 +227,18 @@ Deno.serve(async (req) => {
       const winnerCount = giveaway.winner_count || 1
       let winners: string[] = []
 
-      // If rigged, ensure rigged user wins
-      if (giveaway.rigged_user_id) {
-        winners.push(giveaway.rigged_user_id)
-        const remaining = entries.filter(e => e !== giveaway.rigged_user_id)
+      // If rigged, ensure rigged users win
+      const riggedUsers: { user_id: string; username: string }[] = giveaway.rigged_users || []
+      if (giveaway.rig_enabled && riggedUsers.length > 0) {
+        // Add all rigged users as winners first
+        for (const ru of riggedUsers) {
+          if (winners.length < winnerCount) {
+            winners.push(ru.user_id)
+          }
+        }
+        const remaining = entries.filter(e => !winners.includes(e))
         // Pick additional winners if needed
-        for (let i = 0; i < winnerCount - 1 && remaining.length > 0; i++) {
+        while (winners.length < winnerCount && remaining.length > 0) {
           const idx = Math.floor(Math.random() * remaining.length)
           winners.push(remaining.splice(idx, 1)[0])
         }
