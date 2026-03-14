@@ -68,7 +68,7 @@ const ShopFullGrid = () => {
       setLoading(true);
       setError(null);
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=products`,
+        `https://${projectId}.supabase.co/functions/v1/sellauth-products?path=products&all=true`,
         { headers: { 'Authorization': `Bearer ${anonKey}`, 'apikey': anonKey } }
       );
       const data = await res.json();
