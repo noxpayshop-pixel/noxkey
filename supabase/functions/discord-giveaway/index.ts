@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
     // === CREATE GIVEAWAY ===
     if (action === 'create') {
-      const { channel_id, title, prize, duration_minutes, winner_count, rigged_user_id, rigged_username } = body
+      const { channel_id, title, prize, duration_minutes, winner_count, rig_enabled, rigged_users } = body
       if (!channel_id || !prize || !duration_minutes) {
         return new Response(JSON.stringify({ error: 'Missing required fields' }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
