@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, Loader2, AlertCircle, Package, Minus, Plus, Mail, CreditCard, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -167,14 +168,11 @@ const ShopFullGrid = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[400px] rounded-full bg-primary/5 blur-[120px]" />
       </div>
       <div className="max-w-5xl mx-auto relative z-10">
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl nox-gradient flex items-center justify-center shadow-lg shadow-primary/20">
-            <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <ShoppingBag className="w-4 h-4 text-primary" />
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Shop</h2>
-            <p className="text-xs text-muted-foreground">Browse our premium products</p>
-          </div>
+          <h2 className="text-xl font-bold text-foreground">Shop</h2>
         </div>
 
         {loading && (
@@ -206,19 +204,17 @@ const ShopFullGrid = () => {
               const slashPrice = getSlashPrice(product);
               const imageUrl = getImageUrl(product);
               return (
-                <Card key={product.id} className="group bg-card/40 border-border/30 hover:border-primary/30 transition-all duration-500 hover:shadow-[var(--nox-shadow-sm)] overflow-hidden flex flex-col backdrop-blur-sm hover:-translate-y-1">
-                  <div className="relative aspect-video w-full overflow-hidden bg-muted/20">
+                <Card key={product.id} className="group bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-[var(--nox-shadow-sm)] overflow-hidden flex flex-col">
+                  <div className="relative aspect-video w-full overflow-hidden bg-muted/30">
                     {imageUrl ? (
-                      <img src={imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out" loading="lazy" />
+                      <img src={imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center nox-mesh">
-                        <Package className="w-10 h-10 text-muted-foreground/20" />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-10 h-10 text-muted-foreground/30" />
                       </div>
                     )}
-                    {/* Gradient overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-card/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     {/* Stock overlay badge */}
-                    <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-md ${product.stock_count > 0 ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-destructive/20 text-destructive border border-destructive/30'}`}>
+                    <div className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full text-[11px] font-bold backdrop-blur-md ${product.stock_count > 0 ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-destructive/20 text-destructive border border-destructive/30'}`}>
                       {product.stock_count > 0 ? `${product.stock_count} in Stock` : 'Out of Stock'}
                     </div>
                   </div>
@@ -226,19 +222,19 @@ const ShopFullGrid = () => {
                     <CardTitle className="text-base font-bold text-foreground line-clamp-2">{product.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="pb-0 flex-1" />
-                  <CardFooter className="flex items-center justify-between pt-2 pb-5 px-6">
+                  <CardFooter className="flex items-center justify-between pt-2 pb-4">
                     <div>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Starting at</p>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl font-black nox-gradient-text">{formatPrice(price, product.currency)}</span>
+                        <span className="text-xl font-black text-foreground">{formatPrice(price, product.currency)}</span>
                         {slashPrice && slashPrice > price && (
-                          <span className="text-xs text-muted-foreground/50 line-through">{formatPrice(slashPrice, product.currency)}</span>
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(slashPrice, product.currency)}</span>
                         )}
                       </div>
                     </div>
-                    <Button variant="nox" size="sm" className="gap-1.5 px-4 rounded-xl" onClick={() => openCheckout(product)} disabled={product.stock_count === 0}>
+                    <Button variant="nox" size="sm" className="gap-1.5 px-4" onClick={() => openCheckout(product)} disabled={product.stock_count === 0}>
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      {product.stock_count === 0 ? 'Sold Out' : 'Buy'}
+                      {product.stock_count === 0 ? 'Out of Stock' : 'Buy'}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -250,7 +246,7 @@ const ShopFullGrid = () => {
 
       {/* Checkout Dialog */}
       <Dialog open={!!checkoutProduct} onOpenChange={(open) => !open && closeCheckout()}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50">
+        <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-foreground">Checkout</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">{checkoutProduct?.name}</DialogDescription>
@@ -273,14 +269,14 @@ const ShopFullGrid = () => {
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">Quantity</Label>
                 <div className="flex items-center gap-3">
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setQuantity(Math.max(selectedVariant.quantity_min || 1, quantity - 1))} disabled={quantity <= (selectedVariant.quantity_min || 1)}><Minus className="w-3 h-3" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(Math.max(selectedVariant.quantity_min || 1, quantity - 1))} disabled={quantity <= (selectedVariant.quantity_min || 1)}><Minus className="w-3 h-3" /></Button>
                   <span className="text-sm font-bold text-foreground w-8 text-center">{quantity}</span>
-                  <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setQuantity(Math.min(selectedVariant.quantity_max || 100, quantity + 1))} disabled={quantity >= (selectedVariant.quantity_max || 100)}><Plus className="w-3 h-3" /></Button>
+                  <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setQuantity(Math.min(selectedVariant.quantity_max || 100, quantity + 1))} disabled={quantity >= (selectedVariant.quantity_max || 100)}><Plus className="w-3 h-3" /></Button>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="grid-checkout-email" className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Mail className="w-3 h-3" /> Email</Label>
-                <Input id="grid-checkout-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/50 border-border/50 rounded-xl" />
+                <Input id="grid-checkout-email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background border-border" />
               </div>
               {paymentMethods.length > 0 && (
                 <div className="space-y-2">
@@ -297,13 +293,13 @@ const ShopFullGrid = () => {
               )}
               <div className="space-y-2">
                 <Label htmlFor="grid-checkout-coupon" className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5"><Tag className="w-3 h-3" /> Coupon (optional)</Label>
-                <Input id="grid-checkout-coupon" type="text" placeholder="Enter coupon code" value={coupon} onChange={(e) => setCoupon(e.target.value)} className="bg-background/50 border-border/50 rounded-xl" />
+                <Input id="grid-checkout-coupon" type="text" placeholder="Enter coupon code" value={coupon} onChange={(e) => setCoupon(e.target.value)} className="bg-background border-border" />
               </div>
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+              <div className="flex items-center justify-between pt-3 border-t border-border">
                 <span className="text-sm text-muted-foreground">Total</span>
                 <span className="text-lg font-black nox-gradient-text">{formatPrice(totalPrice, checkoutProduct.currency)}</span>
               </div>
-              <Button variant="nox" className="w-full gap-2 rounded-xl h-12" onClick={handleCheckout} disabled={checkoutLoading || !email}>
+              <Button variant="nox" className="w-full gap-2" onClick={handleCheckout} disabled={checkoutLoading || !email}>
                 {checkoutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                 {checkoutLoading ? 'Processing...' : `Pay ${formatPrice(totalPrice, checkoutProduct.currency)}`}
               </Button>

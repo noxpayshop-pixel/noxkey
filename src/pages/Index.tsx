@@ -29,7 +29,7 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (isMobile) return;
+    if (isMobile) return; // No spotlight on mobile
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isMobile, handleMouseMove]);
@@ -40,7 +40,7 @@ const Index = () => {
       {!isMobile && (
         <div
           ref={spotlightRef}
-          className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-[0.06]"
+          className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full opacity-[0.07]"
           style={{
             background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)',
             willChange: 'left, top',
@@ -49,38 +49,30 @@ const Index = () => {
       )}
 
       {/* Navigation bar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border/30">
-        <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <img src={logo} alt="The Nox" className="w-8 h-8 group-hover:scale-110 transition-transform duration-300 rounded-full ring-1 ring-primary/20" />
-            <span className="text-sm font-black nox-gradient-text tracking-tight font-display">THE NOX</span>
+            <img src={logo} alt="The Nox" className="w-7 h-7 group-hover:scale-110 transition-transform rounded-full" />
+            <span className="text-sm font-black nox-gradient-text tracking-tight">THE NOX</span>
           </Link>
-          <div className="flex items-center gap-1">
-            {[
-              { to: '/myclaims', label: 'My Items', highlight: false, hideOnMobile: false },
-              { to: '/mypoints', label: 'Points', highlight: false, hideOnMobile: true },
-              { to: '/shop', label: 'Shop', highlight: false, hideOnMobile: false },
-              { to: '/casino', label: 'Casino', highlight: true, hideOnMobile: false },
-            ].map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 uppercase tracking-wider ${
-                  link.hideOnMobile ? 'hidden sm:block' : ''
-                } ${
-                  link.highlight
-                    ? 'text-primary hover:bg-primary/10 font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div className="flex items-center gap-6">
+            <Link to="/myclaims" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              My Items
+            </Link>
+            <Link to="/mypoints" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider hidden sm:block">
+              Points
+            </Link>
+            <Link to="/shop" className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider">
+              Shop
+            </Link>
+            <Link to="/casino" className="text-xs font-bold text-primary hover:text-accent transition-colors uppercase tracking-wider">
+              Casino
+            </Link>
             <a
               href="https://discord.gg/thenox"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300 uppercase tracking-wider hidden sm:block"
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider hidden sm:block"
             >
               Discord
             </a>
@@ -107,51 +99,44 @@ const Index = () => {
       </Suspense>
 
       {/* Footer */}
-      <footer className="relative border-t border-border/30 py-16 px-6">
-        <div className="absolute inset-0 nox-mesh opacity-20" />
+      <footer className="relative border-t border-border py-16 px-6">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="flex flex-col items-center md:items-start gap-3">
               <div className="flex items-center gap-3">
-                <img src={logo} alt="The Nox" className="w-9 h-9 rounded-full ring-1 ring-primary/20" />
-                <span className="text-lg font-black nox-gradient-text font-display">The Nox</span>
+                <img src={logo} alt="The Nox" className="w-8 h-8 rounded-full" />
+                <span className="text-lg font-black nox-gradient-text">The Nox</span>
               </div>
-              <p className="text-xs text-muted-foreground/40 flex items-center gap-1">
-                Made with <Heart className="w-3 h-3 text-destructive/40" /> for our community
+              <p className="text-xs text-muted-foreground/50 flex items-center gap-1">
+                Made with <Heart className="w-3 h-3 text-destructive/50" /> for our community
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {[
-                { to: '/myclaims', label: 'My Items' },
-                { to: '/mypoints', label: 'Points' },
-              ].map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300 uppercase tracking-wider font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <div className="flex items-center gap-8">
+              <Link to="/myclaims" className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium">
+                My Items
+              </Link>
+              <Link to="/mypoints" className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium">
+                Points
+              </Link>
               <a
                 href="https://discord.gg/thenox"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all duration-300 uppercase tracking-wider font-medium"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider font-medium"
               >
                 Discord
               </a>
               <Link
                 to="/dev"
-                className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground/15 hover:text-muted-foreground/40 transition-all flex items-center gap-1"
+                className="text-xs text-muted-foreground/20 hover:text-muted-foreground/50 transition-colors flex items-center gap-1"
               >
                 <Lock className="w-3 h-3" /> Dev
               </Link>
             </div>
           </div>
           <div className="nox-divider mt-8 mb-6" />
-          <p className="text-[10px] text-muted-foreground/25 text-center uppercase tracking-[0.3em]">
+          <p className="text-[10px] text-muted-foreground/30 text-center uppercase tracking-widest">
             © 2026 The Nox. All rights reserved.
           </p>
         </div>

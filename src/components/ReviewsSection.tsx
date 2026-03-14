@@ -34,6 +34,7 @@ const ReviewsSection = () => {
         const data = await res.json();
         if (res.ok) {
           const items: SellAuthFeedback[] = data.data ?? [];
+          // Only show published reviews with a message and 4+ stars
           setReviews(items.filter(r => r.status === 'published' && r.message && r.rating >= 4).slice(0, 6));
         }
       } catch { /* silent */ }
@@ -72,14 +73,17 @@ const ReviewsSection = () => {
 
   return (
     <section className="py-20 px-6 relative">
-      <div className="absolute inset-0 nox-mesh opacity-30" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-accent/5 blur-[120px]" />
+        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/5 blur-[100px]" />
+      </div>
       <div className="max-w-5xl mx-auto relative z-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/20 bg-accent/5 backdrop-blur-sm mb-4">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/20 bg-accent/5 mb-4">
             <MessageSquare className="w-3.5 h-3.5 text-accent" />
-            <span className="text-xs font-semibold text-accent uppercase tracking-[0.2em]">Reviews</span>
+            <span className="text-xs font-semibold text-accent uppercase tracking-wider">Reviews</span>
           </div>
-          <h2 className="text-2xl md:text-4xl font-black text-foreground mb-2 font-display">What Our Customers Say</h2>
+          <h2 className="text-2xl md:text-3xl font-black text-foreground mb-2">What Our Customers Say</h2>
           <p className="text-sm text-muted-foreground">Real feedback from verified purchases</p>
         </div>
 
@@ -90,7 +94,7 @@ const ReviewsSection = () => {
             return (
               <div
                 key={review.id}
-                className="group rounded-2xl border border-border/30 bg-card/20 backdrop-blur-sm p-6 hover:border-primary/20 hover:bg-card/40 transition-all duration-500 flex flex-col gap-3 hover:-translate-y-1"
+                className="group rounded-xl border border-border/50 bg-card/30 p-5 hover:border-primary/20 hover:bg-card/50 transition-all duration-300 flex flex-col gap-3"
               >
                 {/* Stars */}
                 <div className="flex items-center gap-0.5">
@@ -98,7 +102,7 @@ const ReviewsSection = () => {
                     <Star
                       key={i}
                       className={`w-3.5 h-3.5 ${
-                        i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/20'
+                        i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground/30'
                       }`}
                     />
                   ))}
@@ -106,23 +110,23 @@ const ReviewsSection = () => {
 
                 {/* Message */}
                 <div className="flex-1 relative">
-                  <Quote className="w-5 h-5 text-primary/10 absolute -top-1 -left-1" />
-                  <p className="text-sm text-foreground/80 pl-5 line-clamp-3 leading-relaxed">
+                  <Quote className="w-4 h-4 text-primary/20 absolute -top-1 -left-1" />
+                  <p className="text-sm text-foreground/80 pl-4 line-clamp-3">
                     {review.message}
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-border/20">
+                <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   <div className="flex flex-col">
                     <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
                       {maskEmail(review.invoice?.email ?? '')}
                     </span>
-                    <span className="text-[10px] text-primary/50 truncate max-w-[150px]">
+                    <span className="text-[10px] text-primary/60 truncate max-w-[150px]">
                       {productName}
                     </span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground/40">
+                  <span className="text-[10px] text-muted-foreground/50">
                     {timeAgo(review.created_at)}
                   </span>
                 </div>
