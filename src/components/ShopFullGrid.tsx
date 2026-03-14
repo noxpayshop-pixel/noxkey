@@ -221,18 +221,20 @@ const ShopFullGrid = () => {
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-bold text-foreground line-clamp-2">{product.name}</CardTitle>
                   </CardHeader>
-                  <CardContent className="pb-3 flex-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-lg font-black text-foreground">{formatPrice(price, product.currency)}</span>
-                      {slashPrice && slashPrice > price && (
-                        <span className="text-xs text-muted-foreground line-through">{formatPrice(slashPrice, product.currency)}</span>
-                      )}
+                  <CardContent className="pb-0 flex-1" />
+                  <CardFooter className="flex items-center justify-between pt-2 pb-4">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Starting at</p>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-black text-foreground">{formatPrice(price, product.currency)}</span>
+                        {slashPrice && slashPrice > price && (
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(slashPrice, product.currency)}</span>
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button variant="nox" size="sm" className="w-full gap-2" onClick={() => openCheckout(product)} disabled={product.stock_count === 0}>
+                    <Button variant="nox" size="sm" className="gap-1.5 px-4" onClick={() => openCheckout(product)} disabled={product.stock_count === 0}>
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      {product.stock_count === 0 ? 'Out of Stock' : 'Purchase'}
+                      {product.stock_count === 0 ? 'Out of Stock' : 'Buy'}
                     </Button>
                   </CardFooter>
                 </Card>
