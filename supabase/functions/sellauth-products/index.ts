@@ -38,7 +38,7 @@ serve(async (req) => {
     };
 
     // If fetchAll is requested, paginate through all pages
-    if (fetchAll && path === 'feedbacks') {
+    if (fetchAll && (path === 'feedbacks' || path === 'products')) {
       const allItems: any[] = [];
       let page = 1;
       const maxPages = 50;
@@ -49,7 +49,6 @@ serve(async (req) => {
 
         if (!response.ok) {
           if (response.status === 429) {
-            // Rate limited - wait and retry
             await new Promise(r => setTimeout(r, 3000));
             continue;
           }
@@ -67,7 +66,6 @@ serve(async (req) => {
         if (page >= lastPage) break;
         page++;
 
-        // Delay between pages to avoid rate limits
         await new Promise(r => setTimeout(r, 800));
       }
 
