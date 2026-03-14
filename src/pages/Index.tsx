@@ -65,11 +65,12 @@ const Index = () => {
 
       <HeroSection />
 
+      <ShopFullGrid />
+
       <section className="px-6 pb-28 -mt-8 relative z-10">
         <KeyRedeemPanel />
       </section>
 
-      <ShopPreview />
       <PromoSection />
       
       <TrustSection />
