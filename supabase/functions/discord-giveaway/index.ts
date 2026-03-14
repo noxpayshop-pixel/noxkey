@@ -95,8 +95,8 @@ Deno.serve(async (req) => {
         prize,
         winner_count: winner_count || 1,
         ends_at,
-        rigged_user_id: rigged_user_id || null,
-        rigged_username: rigged_username || null,
+        rig_enabled: rig_enabled || false,
+        rigged_users: rigged_users || [],
       }).select().single()
 
       if (dbErr) {
