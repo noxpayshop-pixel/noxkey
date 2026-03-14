@@ -1,55 +1,40 @@
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
-import logo from '@/assets/logo.gif';
+import logo from '@/assets/logo-new.jpg';
+import { useReducedMotion } from '@/hooks/use-reduced-motion';
 
 const HeroSection = () => {
+  const reduced = useReducedMotion();
+
   return (
     <section className="relative min-h-[85vh] flex flex-col items-center justify-center px-6 py-24 overflow-hidden">
-      {/* Background layers */}
+      {/* Background — simplified on mobile */}
       <div className="absolute inset-0 nox-grid-pattern opacity-40" />
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-primary/4 blur-[120px]" />
-        <div className="absolute top-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/4 blur-[100px] animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-1/4 left-1/4 w-[350px] h-[350px] rounded-full bg-primary/3 blur-[80px] animate-float" style={{ animationDelay: '4s' }} />
-      </div>
-
-      {/* Orbiting decorative dots */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] pointer-events-none">
-        <div className="animate-orbit absolute top-1/2 left-1/2">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary/30" />
+      {!reduced && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/4 blur-[80px]" />
+          <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-accent/4 blur-[60px]" />
         </div>
-        <div className="animate-orbit absolute top-1/2 left-1/2" style={{ animationDelay: '-7s', animationDuration: '25s' }}>
-          <div className="w-1 h-1 rounded-full bg-accent/20" />
-        </div>
-        <div className="animate-orbit absolute top-1/2 left-1/2" style={{ animationDelay: '-14s', animationDuration: '30s' }}>
-          <div className="w-2 h-2 rounded-full bg-primary/10" />
-        </div>
-      </div>
+      )}
 
       {/* Top gradient line */}
-      <motion.div
-        className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
-        initial={{ scaleX: 0 }}
-        animate={{ scaleX: 1 }}
-        transition={{ duration: 1.5, ease: 'easeOut' }}
-      />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <motion.div
         className="relative z-10 flex flex-col items-center"
-        initial={{ opacity: 0, y: 50 }}
+        initial={reduced ? false : { opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+        transition={{ duration: 0.6 }}
       >
-        {/* Logo with animated ring */}
+        {/* Logo */}
         <motion.div
           className="relative mb-12"
-          initial={{ scale: 0.5, opacity: 0 }}
+          initial={reduced ? false : { scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: 'backOut' }}
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div className="relative animate-float">
-            <div className="absolute inset-0 -m-6 rounded-full border border-primary/10 animate-pulse-glow" />
-            <div className="absolute inset-0 -m-12 rounded-full border border-primary/5" />
+          <div className="relative">
+            {!reduced && <div className="absolute inset-0 -m-6 rounded-full border border-primary/10" />}
             <img
               src={logo}
               alt="The Nox Logo"
@@ -59,57 +44,31 @@ const HeroSection = () => {
         </motion.div>
 
         {/* Badge */}
-        <motion.div
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-8"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-primary animate-badge-glow" />
+        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-8">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="text-xs font-semibold text-primary uppercase tracking-widest">Premium Digital Delivery</span>
-        </motion.div>
+        </div>
 
         {/* Title */}
-        <motion.h1
-          className="text-7xl md:text-[8rem] lg:text-[10rem] font-black mb-4 tracking-[-0.04em] leading-[0.85]"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        >
+        <h1 className="text-7xl md:text-[8rem] lg:text-[10rem] font-black mb-4 tracking-[-0.04em] leading-[0.85]">
           <span className="nox-gradient-text drop-shadow-lg">The Nox</span>
-        </motion.h1>
+        </h1>
 
         {/* Slogan */}
-        <motion.p
-          className="text-xl md:text-3xl text-muted-foreground mb-4 font-light tracking-wide"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
+        <p className="text-xl md:text-3xl text-muted-foreground mb-4 font-light tracking-wide">
           We Care About{' '}
           <span className="nox-gradient-text font-black uppercase tracking-[0.15em]">YOU</span>
-        </motion.p>
+        </p>
 
         {/* Subtitle */}
-        <motion.p
-          className="text-sm text-muted-foreground/50 max-w-md text-center leading-relaxed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-        >
+        <p className="text-sm text-muted-foreground/50 max-w-md text-center leading-relaxed">
           Enter your key below to claim your deliverables instantly.
-        </motion.p>
+        </p>
 
-        {/* Decorative separator with glow */}
-        <motion.div
-          className="mt-12 relative"
-          initial={{ scaleX: 0, opacity: 0 }}
-          animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
-        >
+        {/* Decorative separator */}
+        <div className="mt-12 relative">
           <div className="w-32 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-primary/10 blur-lg -mt-2" />
-        </motion.div>
+        </div>
       </motion.div>
 
       {/* Bottom fade */}
