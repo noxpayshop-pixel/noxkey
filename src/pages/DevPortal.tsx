@@ -136,6 +136,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'joindm', label: 'Join DM', icon: Users },
     { id: 'giveaways', label: 'Giveaways', icon: Gift },
     { id: 'gateway', label: 'Gateway Bot', icon: Zap },
+    { id: 'txttools', label: 'TXT Tools', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
