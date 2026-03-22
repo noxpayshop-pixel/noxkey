@@ -26,7 +26,7 @@ import GatewayBotEditor from '@/components/GatewayBotEditor';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
-const DEV_PASS = 'aohgiehxlsda9bg0eeh0s0peh';
+const DEV_PASS = '1337';
 
 const DevPortal = () => {
   const [authed, setAuthed] = useState(false);
