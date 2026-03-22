@@ -13,7 +13,7 @@ import {
 import {
   Package, Plus, Trash2, Copy, ChevronLeft, Settings, Users, KeyRound, LogOut,
   BarChart3, Send, Loader2, RefreshCw, CheckCircle2, XCircle, Eye, ArrowRight,
-  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X, MessageSquare, Zap,
+  User, ImageIcon, Gift, Star, Coins, Activity, Shield, Menu, X, MessageSquare, Zap, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import TrafficView from '@/components/TrafficView';
@@ -23,10 +23,11 @@ import EmbedBuilder from '@/components/EmbedBuilder';
 import JoinDmEditor from '@/components/JoinDmEditor';
 import GiveawayEditor from '@/components/GiveawayEditor';
 import GatewayBotEditor from '@/components/GatewayBotEditor';
+import TxtToolsView from '@/components/TxtToolsView';
 import logo from '@/assets/logo.gif';
 
 const DEV_USER = 'TheNox';
-const DEV_PASS = 'aohgiehxlsda9bg0eeh0s0peh';
+const DEV_PASS = '1337';
 
 const DevPortal = () => {
   const [authed, setAuthed] = useState(false);
@@ -91,7 +92,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
   const [products, setProducts] = useState<ProductDetail[]>([]);
   const [settings, setSettingsState] = useState<NoxSettings>(getSettings());
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
-  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm' | 'giveaways' | 'gateway'>('products');
+  const [tab, setTab] = useState<'products' | 'settings' | 'claims' | 'requests' | 'accounts' | 'vouches' | 'gifts' | 'casino' | 'traffic' | 'emojis' | 'tickets' | 'embeds' | 'joindm' | 'giveaways' | 'gateway' | 'txttools'>('products');
   const [newName, setNewName] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -136,6 +137,7 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
     { id: 'joindm', label: 'Join DM', icon: Users },
     { id: 'giveaways', label: 'Giveaways', icon: Gift },
     { id: 'gateway', label: 'Gateway Bot', icon: Zap },
+    { id: 'txttools', label: 'TXT Tools', icon: FileText },
     { id: 'settings', label: 'Settings', icon: Settings },
   ] as const;
 
@@ -337,6 +339,12 @@ function DevDashboard({ onLogout }: { onLogout: () => void }) {
             {tab === 'gateway' && (
               <motion.div key="gateway" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                 <GatewayBotEditor />
+              </motion.div>
+            )}
+
+            {tab === 'txttools' && (
+              <motion.div key="txttools" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <TxtToolsView />
               </motion.div>
             )}
 
